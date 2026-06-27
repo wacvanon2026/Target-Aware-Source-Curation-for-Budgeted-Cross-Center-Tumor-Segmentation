@@ -50,7 +50,7 @@ def mamamia_plan(data_root: str = "data/mamamia", split_root: str = "splits/mama
                 steps.append({"name": f"mamamia_{target}_{method}{budget}", "cmd": ["python", "-m", "tavo_release.cli", "command", "--dataset", "mamamia", "--dataset-id", f"{target}:{method}{budget}"]})
             for method in dataset_methods("mamamia", "domain_adaptation"):
                 cfg = f"configs/generated/mamamia_{target}_{method}_{budget}.json"
-                steps.append({"name": f"mamamia_{target}_{method}{budget}_da_config", "cmd": ["python", "-m", "tavo_release.cli", "da-config", "--dataset", "mamamia", "--method", method, "--split-dir", f"{split_root}/{target}", "--output-dir", f"outputs/mamamia/{target}/{method}{budget}", "--budget", str(budget), "--output", cfg, "--nnunet-dataset-id", mamamia_da_dataset_id(target, method, budget)]})
+                steps.append({"name": f"mamamia_{target}_{method}{budget}_da_config", "cmd": ["python", "-m", "tavo_release.cli", "da-config", "--dataset", "mamamia", "--method", method, "--split-dir", f"{split_root}/{target}", "--output-dir", f"outputs/mamamia/{target}/{method}{budget}", "--budget", str(budget), "--output", cfg, "--nnunet-dataset-id", mamamia_da_dataset_id(target, method, budget), "--target", target]})
                 steps.append({"name": f"mamamia_{target}_{method}{budget}_da_command", "cmd": ["python", "-m", "tavo_release.cli", "da-command", "--config", cfg]})
     steps.append({"name": "mamamia_collect", "cmd": ["python", "-m", "tavo_release.cli", "collect", "--dataset", "mamamia", "--results-root", results_root, "--output", "outputs/mamamia_results.json"]})
     return steps
@@ -70,7 +70,7 @@ def brats_plan(data_root: str = "data/brats", split_root: str = "splits/brats", 
             steps.append({"name": f"brats_{actual_target}_tavo{budget}_search", "cmd": ["python", "-m", "tavo_release.cli", "search", *score_args("brats", actual_target), "--budget", str(budget), "--output-dir", f"outputs/brats/{actual_target}/tavo{budget}"]})
             for method in dataset_methods("brats", "domain_adaptation"):
                 cfg = f"configs/generated/brats_{actual_target}_{method}_{budget}.json"
-                steps.append({"name": f"brats_{actual_target}_{method}{budget}_da_config", "cmd": ["python", "-m", "tavo_release.cli", "da-config", "--dataset", "brats", "--method", method, "--split-dir", f"{split_root}/{actual_target}", "--output-dir", f"outputs/brats/{actual_target}/{method}{budget}", "--budget", str(budget), "--output", cfg]})
+                steps.append({"name": f"brats_{actual_target}_{method}{budget}_da_config", "cmd": ["python", "-m", "tavo_release.cli", "da-config", "--dataset", "brats", "--method", method, "--split-dir", f"{split_root}/{actual_target}", "--output-dir", f"outputs/brats/{actual_target}/{method}{budget}", "--budget", str(budget), "--output", cfg, "--target", actual_target]})
                 steps.append({"name": f"brats_{actual_target}_{method}{budget}_da_command", "cmd": ["python", "-m", "tavo_release.cli", "da-command", "--config", cfg]})
         steps.append({"name": f"brats_{actual_target}_train_command", "cmd": ["python", "-m", "tavo_release.cli", "command", "--dataset", "brats", "--config", "configs/brats_efficientvit.yaml", "--seeds", "0"]})
     steps.append({"name": "brats_collect", "cmd": ["python", "-m", "tavo_release.cli", "collect", "--dataset", "brats", "--results-root", "outputs/brats", "--output", "outputs/brats_results.json"]})
@@ -94,7 +94,7 @@ def officehome_plan(data_root: str = "data/officehome", split_root: str = "split
             steps.append({"name": f"officehome_{target}_tavo{budget}_search", "cmd": ["python", "-m", "tavo_release.cli", "search", *score_args("officehome", target), "--budget", str(budget), "--output-dir", f"outputs/officehome/{target}/tavo{budget}"]})
             for method in dataset_methods("officehome", "domain_adaptation"):
                 cfg = f"configs/generated/officehome_{target}_{method}_{budget}.json"
-                steps.append({"name": f"officehome_{target}_{method}{budget}_da_config", "cmd": ["python", "-m", "tavo_release.cli", "da-config", "--dataset", "officehome", "--method", method, "--split-dir", f"{split_root}/{target}", "--output-dir", f"outputs/officehome/{target}/{method}{budget}", "--budget", str(budget), "--output", cfg]})
+                steps.append({"name": f"officehome_{target}_{method}{budget}_da_config", "cmd": ["python", "-m", "tavo_release.cli", "da-config", "--dataset", "officehome", "--method", method, "--split-dir", f"{split_root}/{target}", "--output-dir", f"outputs/officehome/{target}/{method}{budget}", "--budget", str(budget), "--output", cfg, "--target", target]})
                 steps.append({"name": f"officehome_{target}_{method}{budget}_da_command", "cmd": ["python", "-m", "tavo_release.cli", "da-command", "--config", cfg]})
     steps.append({"name": "officehome_collect", "cmd": ["python", "-m", "tavo_release.cli", "collect", "--dataset", "officehome", "--results-root", "outputs/officehome", "--output", "outputs/officehome_results.json"]})
     return steps

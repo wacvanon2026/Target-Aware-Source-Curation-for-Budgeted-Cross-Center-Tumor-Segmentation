@@ -49,6 +49,8 @@ def test_selection_route_inventory_covers_extra_officehome_methods():
     assert audit["families"]["domain_adaptation"]["count"] == 168
     da_routes = route_inventory("mamamia", family="domain_adaptation")
     assert all("--nnunet-dataset-id" in route["config_command"] for route in da_routes)
+    da_routes = route_inventory("brats", family="domain_adaptation")
+    assert all("--target" in route["config_command"] for route in da_routes)
 
 
 def test_combined_plan_covers_mamamia_selection_and_tavo_search():
@@ -79,3 +81,12 @@ def test_tracked_release_audit_rejects_runtime_files(tmp_path: Path):
 def test_mamamia_da_command_requires_dataset_id(tmp_path: Path):
     cfg = build_config("mamamia", "dann", tmp_path, tmp_path / "out", 50, tmp_path / "da.json", nnunet_dataset_id=9000)
     assert "9000" in build_train_command(cfg)
+
+
+def test_da_config_preserves_target(tmp_path: Path):
+    cfg = build_config("brats", "aada", tmp_path, tmp_path / "out", 50, tmp_path / "brats_da.json", target="C5")
+    assert "--target" in build_train_command(cfg)
+    assert "C5" in build_train_command(cfg)
+    cfg = build_config("officehome", "mme", tmp_path, tmp_path / "out", 50, tmp_path / "office_da.json", target="Art")
+    assert "--target" in build_train_command(cfg)
+    assert "Art" in build_train_command(cfg)

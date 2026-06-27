@@ -28,7 +28,7 @@ OFFICEHOME_ENTRYPOINTS = {
 }
 
 
-def build_config(dataset: str, method: str, split_dir: str | Path, output_dir: str | Path, budget: int, output: str | Path, nnunet_dataset_id: int | str | None = None) -> Path:
+def build_config(dataset: str, method: str, split_dir: str | Path, output_dir: str | Path, budget: int, output: str | Path, nnunet_dataset_id: int | str | None = None, target: str | None = None) -> Path:
     if method not in dataset_methods(dataset, "domain_adaptation"):
         raise ValueError(f"unknown domain adaptation method: {method}")
     cfg = {
@@ -44,6 +44,8 @@ def build_config(dataset: str, method: str, split_dir: str | Path, output_dir: s
         "implementation": implementation(dataset, method),
         "training": {"output_dir": str(Path(output_dir)), "save_checkpoints": True},
     }
+    if target is not None:
+        cfg["target"] = target
     if nnunet_dataset_id is not None:
         cfg["nnunet_dataset_id"] = int(nnunet_dataset_id)
     return write_json(output, cfg)

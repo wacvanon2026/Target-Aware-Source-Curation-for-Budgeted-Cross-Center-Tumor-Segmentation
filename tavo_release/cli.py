@@ -107,7 +107,7 @@ def cmd_matrix(args):
 
 
 def cmd_da_config(args):
-    path = domain_adaptation.build_config(args.dataset, args.method, args.split_dir, args.output_dir, args.budget, args.output, nnunet_dataset_id=args.nnunet_dataset_id)
+    path = domain_adaptation.build_config(args.dataset, args.method, args.split_dir, args.output_dir, args.budget, args.output, nnunet_dataset_id=args.nnunet_dataset_id, target=args.target)
     return {"config": str(path)}
 
 
@@ -305,6 +305,7 @@ def main(argv: list[str] | None = None) -> int:
     da_config.add_argument("--budget", type=int, required=True)
     da_config.add_argument("--output", required=True)
     da_config.add_argument("--nnunet-dataset-id")
+    da_config.add_argument("--target")
     da_command = sub.add_parser("da-command")
     da_command.add_argument("--config", required=True)
     collect = sub.add_parser("collect")

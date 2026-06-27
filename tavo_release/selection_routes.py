@@ -101,7 +101,7 @@ def domain_adaptation_route(dataset: str, target: str, method: str, budget: int)
         raise ValueError(method)
     route = {"dataset": dataset, "target": target, "method": method, "budget": budget, "route_type": "domain_adaptation", "implementation": implementation(dataset, method)}
     cfg = f"configs/generated/{dataset}_{target}_{method}_{budget}.json"
-    config_command = ["python", "-m", "tavo_release.cli", "da-config", "--dataset", dataset, "--method", method, "--split-dir", split_dir(dataset, target), "--output-dir", f"outputs/{dataset}/{target}/{method}{budget}", "--budget", str(budget), "--output", cfg]
+    config_command = ["python", "-m", "tavo_release.cli", "da-config", "--dataset", dataset, "--method", method, "--split-dir", split_dir(dataset, target), "--output-dir", f"outputs/{dataset}/{target}/{method}{budget}", "--budget", str(budget), "--output", cfg, "--target", target]
     if dataset == "mamamia":
         config_command.extend(["--nnunet-dataset-id", mamamia_da_dataset_id(target, method, budget)])
     route["config_command"] = config_command

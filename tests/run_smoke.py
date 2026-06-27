@@ -40,6 +40,9 @@ with TemporaryDirectory(prefix="tavo_release_test_") as tmp:
     da_routes = route_inventory("mamamia", family="domain_adaptation")
     if not all("--nnunet-dataset-id" in route["config_command"] for route in da_routes):
         raise SystemExit("MAMA-MIA DA routes lost nnUNet dataset ids")
+    brats_da = route_inventory("brats", family="domain_adaptation")
+    if not all("--target" in route["config_command"] for route in brats_da):
+        raise SystemExit("BraTS DA routes lost targets")
     names = {step["name"] for step in combined_plan()}
     for name in ("mamamia_NACT_rds50_selection", "mamamia_NACT_tavo50_search", "mamamia_NACT_tavo50"):
         if name not in names:

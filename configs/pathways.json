@@ -20,6 +20,7 @@
         "diversity": "tavo_release.tavo"
       },
       "tavo_methods": ["tavo_8d_cmaes"],
+      "tavo_entrypoints": ["python -m tavo_release.cli tavo-command --dataset mamamia"],
       "domain_adaptation_methods": ["dann", "mmd", "advent", "seasa"],
       "domain_adaptation_trainers": {
         "dann": "nnUNetTrainerTAVODANN",
@@ -54,7 +55,7 @@
         "diversity": "external/efficientvit/scripts/run_diversity.py"
       },
       "tavo_methods": ["tavo_8d_cmaes"],
-      "tavo_entrypoints": ["external/efficientvit/scripts/search_multi/cma_TARGET_8d_5T.py", "external/efficientvit/scripts/search_multi/cma_TARGET_8d_10T.py"],
+      "tavo_entrypoints": ["python -m tavo_release.cli tavo-command --dataset brats", "external/efficientvit/scripts/search_multi/cma_TARGET_8d_5T.py", "external/efficientvit/scripts/search_multi/cma_TARGET_8d_10T.py"],
       "domain_adaptation_methods": ["aada", "mme", "lada", "clue"],
       "domain_adaptation_entrypoints": {
         "aada": "external/efficientvit/scripts/run_aada.py",
@@ -76,6 +77,7 @@
       "targets": ["Art", "Clipart", "Product", "Real_World"],
       "budgets": [50, 150, 250],
       "selection_methods": ["random", "orient", "craig", "kmeans", "coreset", "metric_coreset", "dp4tl", "bilevel", "proto_repair", "transport_smi"],
+      "score_file_methods": ["rds", "less", "orient", "craig", "gradmatch", "kmeans", "kcenter", "diversity"],
       "selection_entrypoints": {
         "orient": "external/efficientvit/scripts_cls/gen_source_orient_subset.py",
         "craig": "external/efficientvit/scripts_cls/select_target_2shot.py",
@@ -94,6 +96,7 @@
         "metric_coreset": "configs_cls/officehome/TARGET/source_SOURCE_target_metric_coreset_2shot.yaml"
       },
       "tavo_methods": ["tavo_8d_cmaes"],
+      "tavo_entrypoints": ["python -m tavo_release.cli tavo-command --dataset officehome"],
       "domain_adaptation_methods": ["dann", "aada", "mme", "lada", "adamatch"],
       "domain_adaptation_entrypoints": {
         "dann": "external/efficientvit/scripts_cls/train_cls.py",

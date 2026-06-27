@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from .matrix import BUDGETS, DATASET_METHODS
+from .matrix import BUDGETS, DATASET_METHODS, SCORE_METHODS_8D
 
 
 REQUIRED_DATASETS = {"MAMA-MIA": "mamamia", "BraTS": "brats", "OfficeHome": "officehome"}
@@ -14,16 +14,29 @@ def load_pathways(path: str | Path) -> list[dict]:
     return list(data["pathways"])
 
 
-def route_present(spec: dict, method: str) -> bool:
+def selection_route_present(spec: dict, method: str) -> bool:
     if method == "random":
         return True
-    for key in ("selection_entrypoints", "selection_config_patterns", "domain_adaptation_entrypoints", "domain_adaptation_trainers", "tavo_entrypoints"):
-        value = spec.get(key, {})
-        if isinstance(value, dict) and method in value:
-            return True
-        if isinstance(value, list) and value:
+    for key in ("selection_entrypoints", "selection_config_patterns"):
+        if method in spec.get(key, {}):
             return True
     return method in spec.get("score_file_methods", [])
+
+
+def domain_adaptation_route_present(spec: dict, method: str) -> bool:
+    for key in ("domain_adaptation_entrypoints", "domain_adaptation_trainers"):
+        if method in spec.get(key, {}):
+            return True
+    return False
+
+
+def tavo_route_present(spec: dict) -> bool:
+    if not spec.get("tavo_methods"):
+        return False
+    if not spec.get("tavo_entrypoints"):
+        return False
+    score_methods = set(spec.get("score_file_methods", []))
+    return set(SCORE_METHODS_8D).issubset(score_methods)
 
 
 def audit_pathways(path: str | Path = "configs/pathways.json") -> dict:
@@ -49,11 +62,11 @@ def audit_pathways(path: str | Path = "configs/pathways.json") -> dict:
         if missing_targets:
             errors.append(f"{public_name} missing targets: {missing_targets}")
         for method in spec.get("selection_methods", []):
-            if not route_present(spec, method):
+            if not selection_route_present(spec, method):
                 errors.append(f"{public_name} selection route missing: {method}")
         for method in spec.get("domain_adaptation_methods", []):
-            if not route_present(spec, method):
+            if not domain_adaptation_route_present(spec, method):
                 errors.append(f"{public_name} domain adaptation route missing: {method}")
-        if not spec.get("tavo_methods"):
+        if not tavo_route_present(spec):
             errors.append(f"{public_name} TAVO route missing")
     return {"ok": not errors, "errors": errors, "datasets": sorted(seen)}

@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-from . import brats, domain_adaptation, mamamia, matrix, officehome, pathways
+from . import brats, domain_adaptation, mamamia, matrix, officehome, pathways, tavo_routes
 from .common import download_file, run_command, scan_for_forbidden_paths, scan_for_large_or_binary, write_json
 from .pipeline import write_plan
 from .tavo import run_score_file_search, write_selection
@@ -67,6 +67,10 @@ def cmd_search(args):
     scores = parse_score_args(args.score)
     result = run_score_file_search(scores, args.budget, args.output_dir, seed=args.seed, generations=args.generations, popsize=args.popsize)
     return result["best"]
+
+
+def cmd_tavo_command(args):
+    return {"search": tavo_routes.search_command(args.dataset, args.target, args.budget, args.output_dir, args.score_root)}
 
 
 def cmd_command(args):
@@ -240,6 +244,12 @@ def main(argv: list[str] | None = None) -> int:
     search.add_argument("--seed", type=int, default=0)
     search.add_argument("--generations", type=int, default=12)
     search.add_argument("--popsize", type=int, default=20)
+    tavo_command = sub.add_parser("tavo-command")
+    tavo_command.add_argument("--dataset", choices=["mamamia", "brats", "officehome"], required=True)
+    tavo_command.add_argument("--target", required=True)
+    tavo_command.add_argument("--budget", type=int, required=True)
+    tavo_command.add_argument("--score-root", default="scores")
+    tavo_command.add_argument("--output-dir")
     command = sub.add_parser("command")
     command.add_argument("--dataset", choices=["mamamia", "brats", "officehome"], required=True)
     command.add_argument("--dataset-id", default="1301")
@@ -285,6 +295,7 @@ def main(argv: list[str] | None = None) -> int:
         "download": cmd_download,
         "select": cmd_select,
         "search": cmd_search,
+        "tavo-command": cmd_tavo_command,
         "command": cmd_command,
         "da-config": cmd_da_config,
         "da-command": cmd_da_command,

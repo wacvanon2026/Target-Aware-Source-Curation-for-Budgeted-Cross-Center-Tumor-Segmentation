@@ -39,6 +39,10 @@ def test_tavo_routes_are_8d():
 
 
 def test_selection_route_inventory_covers_extra_officehome_methods():
+    random_route = selection_route("mamamia", "NACT", "random", 50)
+    assert random_route["path"] == "splits/mamamia_lodo_seed42/NACT/random/random_50.txt"
+    rds_route = selection_route("mamamia", "NACT", "rds", 50)
+    assert "splits/mamamia_lodo_seed42/NACT/methods/rds_50.txt" in rds_route["command"]
     route = selection_route("officehome", "Art", "coreset", 50)
     assert route["route_type"] in {"entrypoint", "config_pattern"}
     assert len(route_inventory("all")) == 423

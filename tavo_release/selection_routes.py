@@ -36,10 +36,11 @@ def selection_route(dataset: str, target: str, method: str, budget: int, source:
         raise ValueError(method)
     route = {"dataset": dataset, "target": target, "method": method, "budget": budget}
     if method == "random":
-        route.update({"route_type": "split_file", "path": f"splits/{dataset}/{target}/random/random_{budget}.txt"})
+        route.update({"route_type": "split_file", "path": f"{selection_split_dir(dataset, target)}/random/random_{budget}.txt"})
         return route
     if method in SCORE_METHODS_8D:
-        route.update({"route_type": "score_file", "command": selection_command(dataset, target, method, budget)})
+        out = f"{selection_split_dir(dataset, target)}/methods/{method}_{budget}.txt"
+        route.update({"route_type": "score_file", "command": selection_command(dataset, target, method, budget, output=out)})
         return route
     entrypoints = spec.get("selection_entrypoints", {})
     patterns = spec.get("selection_config_patterns", {})
@@ -86,6 +87,12 @@ def mamamia_da_dataset_id(target: str, method: str, budget: int) -> str:
 
 
 def split_dir(dataset: str, target: str) -> str:
+    if dataset == "mamamia":
+        return f"splits/mamamia_lodo_seed42/{target}"
+    return f"splits/{dataset}/{target}"
+
+
+def selection_split_dir(dataset: str, target: str) -> str:
     if dataset == "mamamia":
         return f"splits/mamamia_lodo_seed42/{target}"
     return f"splits/{dataset}/{target}"
@@ -162,6 +169,10 @@ def command_value(command: list[str], flag: str) -> str | None:
 def route_command_errors(family: str, route: dict) -> list[dict]:
     errors = []
     prefix = {"dataset": route["dataset"], "target": route["target"], "method": route["method"], "budget": route["budget"]}
+    if family == "selection" and route["method"] == "random":
+        expected_path = f"{selection_split_dir(route['dataset'], route['target'])}/random/random_{route['budget']}.txt"
+        if route.get("path") != expected_path:
+            errors.append({**prefix, "error": "random_split_path"})
     if family == "selection" and route["method"] in SCORE_METHODS_8D:
         command = route.get("command", [])
         if command.count("--score") != len(SCORE_METHODS_8D):
@@ -175,6 +186,9 @@ def route_command_errors(family: str, route: dict) -> list[dict]:
                 errors.append({**prefix, "error": "selection_weight_shape"})
         if command_value(command, "--budget") != str(route["budget"]):
             errors.append({**prefix, "error": "selection_budget"})
+        expected_output = f"{selection_split_dir(route['dataset'], route['target'])}/methods/{route['method']}_{route['budget']}.txt"
+        if command_value(command, "--output") != expected_output:
+            errors.append({**prefix, "error": "selection_output"})
     if family == "tavo":
         command = route.get("command", [])
         if command.count("--score") != len(SCORE_METHODS_8D):

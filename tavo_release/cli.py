@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-from . import brats, domain_adaptation, mamamia, matrix, officehome, pathways, tavo_routes
+from . import brats, domain_adaptation, mamamia, matrix, officehome, pathways, selection_routes, tavo_routes
 from .common import download_file, release_audit, run_command, scan_for_forbidden_paths, scan_for_large_or_binary, write_json
 from .pipeline import write_plan
 from .tavo import run_score_file_search, write_selection
@@ -71,6 +71,22 @@ def cmd_search(args):
 
 def cmd_tavo_command(args):
     return {"search": tavo_routes.search_command(args.dataset, args.target, args.budget, args.output_dir, args.score_root)}
+
+
+def cmd_selection_route(args):
+    return selection_routes.selection_route(args.dataset, args.target, args.method, args.budget, source=args.source, pathways_path=args.pathways)
+
+
+def cmd_route_inventory(args):
+    routes = selection_routes.route_inventory(args.dataset, pathways_path=args.pathways)
+    return {"count": len(routes), "routes": routes}
+
+
+def cmd_route_audit(args):
+    result = selection_routes.route_audit(args.pathways)
+    if not result["ok"]:
+        raise SystemExit(json.dumps(result, indent=2))
+    return result
 
 
 def cmd_command(args):
@@ -253,6 +269,18 @@ def main(argv: list[str] | None = None) -> int:
     tavo_command.add_argument("--budget", type=int, required=True)
     tavo_command.add_argument("--score-root", default="scores")
     tavo_command.add_argument("--output-dir")
+    selection_route = sub.add_parser("selection-route")
+    selection_route.add_argument("--dataset", choices=["mamamia", "brats", "officehome"], required=True)
+    selection_route.add_argument("--target", required=True)
+    selection_route.add_argument("--method", required=True)
+    selection_route.add_argument("--budget", type=int, required=True)
+    selection_route.add_argument("--source", default="source")
+    selection_route.add_argument("--pathways", default="configs/pathways.json")
+    route_inventory = sub.add_parser("route-inventory")
+    route_inventory.add_argument("--dataset", choices=["mamamia", "brats", "officehome", "all"], default="all")
+    route_inventory.add_argument("--pathways", default="configs/pathways.json")
+    route_audit = sub.add_parser("route-audit")
+    route_audit.add_argument("--pathways", default="configs/pathways.json")
     command = sub.add_parser("command")
     command.add_argument("--dataset", choices=["mamamia", "brats", "officehome"], required=True)
     command.add_argument("--dataset-id", default="1301")
@@ -300,6 +328,9 @@ def main(argv: list[str] | None = None) -> int:
         "select": cmd_select,
         "search": cmd_search,
         "tavo-command": cmd_tavo_command,
+        "selection-route": cmd_selection_route,
+        "route-inventory": cmd_route_inventory,
+        "route-audit": cmd_route_audit,
         "command": cmd_command,
         "da-config": cmd_da_config,
         "da-command": cmd_da_command,

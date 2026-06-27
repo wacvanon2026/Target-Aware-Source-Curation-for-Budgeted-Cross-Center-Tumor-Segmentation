@@ -83,6 +83,8 @@ def officehome_plan(data_root: str = "data/officehome", split_root: str = "split
                     continue
                 if method in SCORE_METHODS_8D:
                     steps.append({"name": f"officehome_{target}_{method}{budget}_selection", "cmd": ["python", "-m", "tavo_release.cli", "select", *score_args("officehome", target), "--weight", *one_hot_weight(method), "--budget", str(budget), "--output", f"{split_root}/{target}/methods/{method}_{budget}.txt"]})
+                else:
+                    steps.append({"name": f"officehome_{target}_{method}{budget}_selection_route", "cmd": ["python", "-m", "tavo_release.cli", "selection-route", "--dataset", "officehome", "--target", target, "--method", method, "--budget", str(budget)]})
             steps.append({"name": f"officehome_{target}_tavo{budget}_search", "cmd": ["python", "-m", "tavo_release.cli", "search", *score_args("officehome", target), "--budget", str(budget), "--output-dir", f"outputs/officehome/{target}/tavo{budget}"]})
             for method in dataset_methods("officehome", "domain_adaptation"):
                 cfg = f"configs/generated/officehome_{target}_{method}_{budget}.json"

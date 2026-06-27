@@ -9,6 +9,7 @@ from .mamamia import BUDGETS as MAMAMIA_BUDGETS
 from .mamamia import DOMAINS as MAMAMIA_DOMAINS
 from .mamamia import METHODS as MAMAMIA_METHODS
 from .officehome import DOMAINS as OFFICEHOME_DOMAINS
+from .selection_routes import domain_adaptation_route, selection_route, tavo_route
 
 
 def shell_join(cmd: list[str]) -> str:
@@ -50,7 +51,7 @@ def mamamia_plan(data_root: str = "data/mamamia", split_root: str = "splits/mama
                 steps.append({"name": f"mamamia_{target}_{method}{budget}", "cmd": ["python", "-m", "tavo_release.cli", "command", "--dataset", "mamamia", "--dataset-id", f"{target}:{method}{budget}"]})
             for method in dataset_methods("mamamia", "domain_adaptation"):
                 cfg = f"configs/generated/mamamia_{target}_{method}_{budget}.json"
-                steps.append({"name": f"mamamia_{target}_{method}{budget}_da_config", "cmd": ["python", "-m", "tavo_release.cli", "da-config", "--dataset", "mamamia", "--method", method, "--split-dir", f"{split_root}/{target}", "--output-dir", f"outputs/mamamia/{target}/{method}{budget}", "--budget", str(budget), "--output", cfg, "--nnunet-dataset-id", mamamia_da_dataset_id(target, method, budget), "--target", target]})
+                steps.append({"name": f"mamamia_{target}_{method}{budget}_da_config", "cmd": ["python", "-m", "tavo_release.cli", "da-config", "--dataset", "mamamia", "--method", method, "--split-dir", f"{split_root}/{target}", "--output-dir", f"outputs/mamamia/{target}/{method}{budget}", "--budget", str(budget), "--output", cfg, "--target", target, "--nnunet-dataset-id", mamamia_da_dataset_id(target, method, budget)]})
                 steps.append({"name": f"mamamia_{target}_{method}{budget}_da_command", "cmd": ["python", "-m", "tavo_release.cli", "da-command", "--config", cfg]})
     steps.append({"name": "mamamia_collect", "cmd": ["python", "-m", "tavo_release.cli", "collect", "--dataset", "mamamia", "--results-root", results_root, "--output", "outputs/mamamia_results.json"]})
     return steps
@@ -131,6 +132,41 @@ def plan_counts(steps: list[dict]) -> dict[str, int]:
     }
 
 
+def expected_external_selection_command(dataset: str, target: str, method: str, budget: int) -> list[str]:
+    return ["python", "-m", "tavo_release.cli", "selection-route", "--dataset", dataset, "--target", target, "--method", method, "--budget", str(budget)]
+
+
+def plan_route_errors(steps: list[dict]) -> list[dict]:
+    commands = {step["name"]: step["cmd"] for step in steps}
+    errors = []
+    for dataset, spec in DATASET_METHODS.items():
+        for target in spec["targets"]:
+            for budget in BUDGETS:
+                for method in spec["selection"]:
+                    if method == "random":
+                        continue
+                    if method in SCORE_METHODS_8D:
+                        name = f"{dataset}_{target}_{method}{budget}_selection"
+                        expected = selection_route(dataset, target, method, budget)["command"]
+                    else:
+                        name = f"{dataset}_{target}_{method}{budget}_selection_route"
+                        expected = expected_external_selection_command(dataset, target, method, budget)
+                    if commands.get(name) != expected:
+                        errors.append({"name": name, "family": "selection"})
+                name = f"{dataset}_{target}_tavo{budget}_search"
+                if commands.get(name) != tavo_route(dataset, target, budget)["command"]:
+                    errors.append({"name": name, "family": "tavo"})
+                for method in spec["domain_adaptation"]:
+                    route = domain_adaptation_route(dataset, target, method, budget)
+                    name = f"{dataset}_{target}_{method}{budget}_da_config"
+                    if commands.get(name) != route["config_command"]:
+                        errors.append({"name": name, "family": "domain_adaptation_config"})
+                    name = f"{dataset}_{target}_{method}{budget}_da_command"
+                    if commands.get(name) != route["train_command"]:
+                        errors.append({"name": name, "family": "domain_adaptation_command"})
+    return errors
+
+
 def audit_plan() -> dict:
     steps = combined_plan()
     expected = expected_plan_counts()
@@ -152,6 +188,9 @@ def audit_plan() -> dict:
     missing_names = sorted(required_names - names)
     if missing_names:
         errors.append({"missing_names": missing_names})
+    route_errors = plan_route_errors(steps)
+    if route_errors:
+        errors.append({"route_errors": route_errors})
     return {"ok": not errors, "expected": expected, "observed": observed, "errors": errors}
 
 

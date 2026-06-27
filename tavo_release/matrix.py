@@ -19,7 +19,7 @@ DATASET_METHODS = {
         "training": "efficientvit",
         "selection": ("random", *SCORE_METHODS_8D),
         "tavo": ("tavo_8d_cmaes",),
-        "domain_adaptation": ("aada", "mme", "lada", "clue"),
+        "domain_adaptation": ("dann", "mmd", "advent", "seasa"),
         "targets": ("C5", "TCGA_LGG", "TCGA_GBM", "UPENN", "IVYGAP"),
     },
     "officehome": {
@@ -28,7 +28,7 @@ DATASET_METHODS = {
         "training": "classification",
         "selection": ("random", *SCORE_METHODS_8D, "coreset", "metric_coreset", "dp4tl", "bilevel", "proto_repair", "transport_smi"),
         "tavo": ("tavo_8d_cmaes",),
-        "domain_adaptation": ("dann", "aada", "mme", "lada", "adamatch"),
+        "domain_adaptation": ("dann", "mmd", "coral", "cdan"),
         "targets": ("Art", "Clipart", "Product", "Real_World"),
     },
 }

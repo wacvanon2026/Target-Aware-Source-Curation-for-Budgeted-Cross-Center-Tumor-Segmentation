@@ -14,17 +14,16 @@ MAMAMIA_TRAINERS = {
     "seasa": "nnUNetTrainerTAVOSEASA",
 }
 BRATS_ENTRYPOINTS = {
-    "aada": "external/efficientvit/scripts/run_aada.py",
-    "mme": "external/efficientvit/scripts/run_mme.py",
-    "lada": "external/efficientvit/scripts/run_lada.py",
-    "clue": "external/efficientvit/scripts/run_clue.py",
+    "dann": "external/efficientvit/scripts/run_dann.py",
+    "mmd": "external/efficientvit/scripts/run_mmd.py",
+    "advent": "external/efficientvit/scripts/run_advent.py",
+    "seasa": "external/efficientvit/scripts/run_seasa.py",
 }
 OFFICEHOME_ENTRYPOINTS = {
     "dann": "external/efficientvit/scripts_cls/train_cls.py",
-    "aada": "external/efficientvit/scripts_cls/select_aada_2shot.py",
-    "mme": "external/efficientvit/scripts_cls/select_mme_2shot.py",
-    "lada": "external/efficientvit/scripts_cls/select_lada_2shot.py",
-    "adamatch": "external/efficientvit/scripts_cls/select_adamatch_2shot.py",
+    "mmd": "external/efficientvit/scripts_cls/train_cls.py",
+    "coral": "external/efficientvit/scripts_cls/train_cls.py",
+    "cdan": "external/efficientvit/scripts_cls/train_cls.py",
 }
 
 
@@ -78,9 +77,7 @@ def build_train_command(config: str | Path) -> list[str]:
     if dataset == "brats":
         return ["python", impl["entrypoint"], "--target", target, "--budget", budget]
     if dataset == "officehome":
-        if method == "dann":
-            return ["python", impl["entrypoint"], "--config", str(cfg.get("train_config", "configs/officehome_target_dann.json"))]
-        return ["python", impl["entrypoint"], "--target", target, "--budget_per_class", str(cfg.get("budget_per_class", 2))]
+        return ["python", impl["entrypoint"], "--method", method, "--target", target, "--budget_per_class", str(cfg.get("budget_per_class", 2))]
     raise ValueError(dataset)
 
 

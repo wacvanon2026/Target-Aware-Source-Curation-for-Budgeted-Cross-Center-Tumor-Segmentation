@@ -56,12 +56,12 @@
       },
       "tavo_methods": ["tavo_8d_cmaes"],
       "tavo_entrypoints": ["python -m tavo_release.cli tavo-command --dataset brats", "external/efficientvit/scripts/search_multi/cma_TARGET_8d_5T.py", "external/efficientvit/scripts/search_multi/cma_TARGET_8d_10T.py"],
-      "domain_adaptation_methods": ["aada", "mme", "lada", "clue"],
+      "domain_adaptation_methods": ["dann", "mmd", "advent", "seasa"],
       "domain_adaptation_entrypoints": {
-        "aada": "external/efficientvit/scripts/run_aada.py",
-        "mme": "external/efficientvit/scripts/run_mme.py",
-        "lada": "external/efficientvit/scripts/run_lada.py",
-        "clue": "external/efficientvit/scripts/run_clue.py"
+        "dann": "external/efficientvit/scripts/run_dann.py",
+        "mmd": "external/efficientvit/scripts/run_mmd.py",
+        "advent": "external/efficientvit/scripts/run_advent.py",
+        "seasa": "external/efficientvit/scripts/run_seasa.py"
       },
       "commands": {
         "split": "python -m tavo_release.cli split --dataset brats --data-root data/brats --output-root splits/brats --target C5",
@@ -97,13 +97,12 @@
       },
       "tavo_methods": ["tavo_8d_cmaes"],
       "tavo_entrypoints": ["python -m tavo_release.cli tavo-command --dataset officehome"],
-      "domain_adaptation_methods": ["dann", "aada", "mme", "lada", "adamatch"],
+      "domain_adaptation_methods": ["dann", "mmd", "coral", "cdan"],
       "domain_adaptation_entrypoints": {
         "dann": "external/efficientvit/scripts_cls/train_cls.py",
-        "aada": "external/efficientvit/scripts_cls/select_aada_2shot.py",
-        "mme": "external/efficientvit/scripts_cls/select_mme_2shot.py",
-        "lada": "external/efficientvit/scripts_cls/select_lada_2shot.py",
-        "adamatch": "external/efficientvit/scripts_cls/select_adamatch_2shot.py"
+        "mmd": "external/efficientvit/scripts_cls/train_cls.py",
+        "coral": "external/efficientvit/scripts_cls/train_cls.py",
+        "cdan": "external/efficientvit/scripts_cls/train_cls.py"
       },
       "commands": {
         "split": "python -m tavo_release.cli split --dataset officehome --data-root data/officehome --output-root splits/officehome --target Art",

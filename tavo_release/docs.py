@@ -3,6 +3,8 @@ from __future__ import annotations
 import shlex
 from pathlib import Path
 
+from .matrix import DATASET_METHODS
+
 
 KNOWN_COMMANDS = {
     "check",
@@ -88,6 +90,9 @@ def readme_audit(path: str | Path = "README.md") -> dict:
                     errors.append({"command": " ".join(cmd), "error": "select_weight_not_8d"})
         if name == "da-config":
             dataset = flag_value(cmd, "--dataset")
+            method = flag_value(cmd, "--method")
+            if dataset in DATASET_METHODS and method not in DATASET_METHODS[dataset]["domain_adaptation"]:
+                errors.append({"command": " ".join(cmd), "error": "da_unknown_method"})
             target = {"mamamia": "NACT", "brats": "C5", "officehome": "Art"}.get(dataset or "")
             if target and flag_value(cmd, "--target") != target:
                 errors.append({"command": " ".join(cmd), "error": "da_missing_target"})

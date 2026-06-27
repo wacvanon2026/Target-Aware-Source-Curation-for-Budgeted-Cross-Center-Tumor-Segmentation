@@ -80,6 +80,8 @@ Build target-domain splits:
 PYTHONPATH=. python -m tavo_release.cli split --dataset brats --data-root data/brats --output-root splits/brats --target C5
 ```
 
+For BraTS, `data/brats` must either contain domain-coded case directories such as `case_C5_001` or explicit split lists such as `C5_target_train.txt`, `C5_target_val.txt`, `C5_target_test.txt`, and `C5_source_pool.txt`.
+
 Create method selections from score dictionaries:
 
 ```bash
@@ -95,8 +97,8 @@ PYTHONPATH=. python -m tavo_release.cli search --score rds=scores/brats/C5/rds.j
 BraTS selection and DA scripts are integrated through the EfficientViT pathway entries in `configs/pathways.json`.
 
 ```bash
-PYTHONPATH=. python -m tavo_release.cli da-config --dataset brats --method aada --split-dir splits/brats/C5 --output-dir outputs/brats/C5/aada50 --budget 50 --output configs/generated/brats_C5_aada_50.json --target C5
-PYTHONPATH=. python -m tavo_release.cli da-command --config configs/generated/brats_C5_aada_50.json
+PYTHONPATH=. python -m tavo_release.cli da-config --dataset brats --method mmd --split-dir splits/brats/C5 --output-dir outputs/brats/C5/mmd50 --budget 50 --output configs/generated/brats_C5_mmd_50.json --target C5
+PYTHONPATH=. python -m tavo_release.cli da-command --config configs/generated/brats_C5_mmd_50.json
 ```
 
 ## OfficeHome
@@ -119,8 +121,8 @@ PYTHONPATH=. python -m tavo_release.cli split --dataset officehome --data-root d
 OfficeHome classification uses the classification pathway entries in `configs/pathways.json`.
 
 ```bash
-PYTHONPATH=. python -m tavo_release.cli da-config --dataset officehome --method mme --split-dir splits/officehome/Art --output-dir outputs/officehome/Art/mme50 --budget 50 --output configs/generated/officehome_Art_mme_50.json --target Art
-PYTHONPATH=. python -m tavo_release.cli da-command --config configs/generated/officehome_Art_mme_50.json
+PYTHONPATH=. python -m tavo_release.cli da-config --dataset officehome --method coral --split-dir splits/officehome/Art --output-dir outputs/officehome/Art/coral50 --budget 50 --output configs/generated/officehome_Art_coral_50.json --target Art
+PYTHONPATH=. python -m tavo_release.cli da-command --config configs/generated/officehome_Art_coral_50.json
 ```
 
 ## Release Checks

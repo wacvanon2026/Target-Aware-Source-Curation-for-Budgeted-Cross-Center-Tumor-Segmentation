@@ -111,7 +111,7 @@ def expected_plan_counts() -> dict[str, int]:
     tavo = sum(len(spec["targets"]) * len(BUDGETS) for spec in DATASET_METHODS.values())
     da = sum(len(spec["targets"]) * len(BUDGETS) * len(spec["domain_adaptation"]) for spec in DATASET_METHODS.values())
     return {
-        "steps": 913,
+        "steps": 889,
         "score_selection": selection,
         "external_selection_route": external_selection,
         "tavo_search": tavo,

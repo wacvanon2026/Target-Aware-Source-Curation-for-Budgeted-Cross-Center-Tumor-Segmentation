@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 from tavo_release.common import forbidden_text_hits, release_audit, scan_git_messages, scan_tracked_forbidden_text, scan_tracked_release_files, tracked_file_issues
+from tavo_release.brats import build_domain_splits
 from tavo_release.cli import main
 from tavo_release.docs import readme_audit
 from tavo_release.domain_adaptation import build_config, build_train_command
@@ -36,6 +37,25 @@ def test_pathway_audit_rejects_extra_methods(tmp_path: Path):
     assert any("extra selection_methods" in error for error in result["errors"])
 
 
+def test_brats_split_rejects_missing_target_domain(tmp_path: Path):
+    (tmp_path / "BraTS2021_00000").mkdir()
+    try:
+        build_domain_splits(tmp_path, tmp_path / "out", "C5")
+    except ValueError as exc:
+        assert "no BraTS cases found for target C5" in str(exc)
+    else:
+        raise AssertionError("expected BraTS split failure")
+
+
+def test_brats_split_accepts_explicit_lists(tmp_path: Path):
+    (tmp_path / "C5_target_train.txt").write_text("a\n")
+    (tmp_path / "C5_target_val.txt").write_text("b\n")
+    (tmp_path / "C5_target_test.txt").write_text("c\n")
+    (tmp_path / "C5_source_pool.txt").write_text("d\n")
+    result = build_domain_splits(tmp_path, tmp_path / "out", "C5")
+    assert result == {"target_train": 1, "target_val": 1, "target_test": 1, "source_pool": 1}
+
+
 def test_tavo_routes_are_8d():
     for dataset, target in (("mamamia", "NACT"), ("brats", "C5"), ("officehome", "Art")):
         cmd = search_command(dataset, target, 50)
@@ -55,7 +75,7 @@ def test_selection_route_inventory_covers_extra_officehome_methods():
     assert audit["ok"]
     assert audit["families"]["selection"]["count"] == 423
     assert audit["families"]["tavo"]["count"] == 39
-    assert audit["families"]["domain_adaptation"]["count"] == 168
+    assert audit["families"]["domain_adaptation"]["count"] == 156
     da_routes = route_inventory("mamamia", family="domain_adaptation")
     assert all("--nnunet-dataset-id" in route["config_command"] for route in da_routes)
     da_routes = route_inventory("brats", family="domain_adaptation")
@@ -100,9 +120,9 @@ def test_mamamia_da_command_requires_dataset_id(tmp_path: Path):
 
 
 def test_da_config_preserves_target(tmp_path: Path):
-    cfg = build_config("brats", "aada", tmp_path, tmp_path / "out", 50, tmp_path / "brats_da.json", target="C5")
+    cfg = build_config("brats", "mmd", tmp_path, tmp_path / "out", 50, tmp_path / "brats_da.json", target="C5")
     assert "--target" in build_train_command(cfg)
     assert "C5" in build_train_command(cfg)
-    cfg = build_config("officehome", "mme", tmp_path, tmp_path / "out", 50, tmp_path / "office_da.json", target="Art")
+    cfg = build_config("officehome", "coral", tmp_path, tmp_path / "out", 50, tmp_path / "office_da.json", target="Art")
     assert "--target" in build_train_command(cfg)
     assert "Art" in build_train_command(cfg)

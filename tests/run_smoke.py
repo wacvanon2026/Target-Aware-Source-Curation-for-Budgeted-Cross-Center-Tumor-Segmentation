@@ -37,7 +37,7 @@ with TemporaryDirectory(prefix="tavo_release_test_") as tmp:
     routed = route_audit()
     if not routed["ok"]:
         raise SystemExit(routed)
-    expected_counts = {"selection": 423, "tavo": 39, "domain_adaptation": 168}
+    expected_counts = {"selection": 423, "tavo": 39, "domain_adaptation": 156}
     for family, expected in expected_counts.items():
         if routed["families"][family]["count"] != expected:
             raise SystemExit(routed)

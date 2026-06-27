@@ -17,14 +17,45 @@ def infer_domain(subject: str) -> str:
     return "default"
 
 
+def first_existing(root: Path, names: tuple[str, ...]) -> Path | None:
+    roots = (root, root / "splits", root / "splits" / root.name, root.parent)
+    for base in roots:
+        for name in names:
+            path = base / name
+            if path.exists():
+                return path
+    return None
+
+
+def explicit_splits(data_root: Path, target_domain: str) -> tuple[list[str], list[str], list[str], list[str]] | None:
+    train_path = first_existing(data_root, (f"{target_domain}_target_train.txt", f"target_train_{target_domain}.txt", "target_train.txt"))
+    val_path = first_existing(data_root, (f"{target_domain}_target_val.txt", f"target_val_{target_domain}.txt", "target_val.txt"))
+    test_path = first_existing(data_root, (f"{target_domain}_target_test.txt", f"target_test_{target_domain}.txt", "target_test.txt"))
+    source_path = first_existing(data_root, (f"{target_domain}_source_pool.txt", f"source_pool_{target_domain}.txt", "source_pool.txt", f"splits_{target_domain}_source", f"splits_{target_domain}_source.txt"))
+    if train_path and val_path and test_path and source_path:
+        return read_lines(train_path), read_lines(val_path), read_lines(test_path), read_lines(source_path)
+    return None
+
+
 def build_domain_splits(data_root: str | Path, output_root: str | Path, target_domain: str, seed: int = 42, ratios=(2, 1, 7)) -> dict[str, int]:
-    subjects = list_cases(data_root)
-    by_domain: dict[str, list[str]] = {}
-    for subject in subjects:
-        by_domain.setdefault(infer_domain(subject), []).append(subject)
-    target = sorted(by_domain.get(target_domain, []))
-    source = sorted(s for d, values in by_domain.items() if d != target_domain for s in values)
-    train, val, test = ratio_split(target, ratios, seed)
+    root = Path(data_root)
+    explicit = explicit_splits(root, target_domain)
+    if explicit:
+        train, val, test, source = explicit
+        target = train + val + test
+    else:
+        subjects = list_cases(root)
+        by_domain: dict[str, list[str]] = {}
+        for subject in subjects:
+            by_domain.setdefault(infer_domain(subject), []).append(subject)
+        target = sorted(by_domain.get(target_domain, []))
+        source = sorted(s for d, values in by_domain.items() if d != target_domain for s in values)
+        if not target:
+            observed = sorted(by_domain)
+            raise ValueError(f"no BraTS cases found for target {target_domain}; observed domains: {observed}; provide domain-coded case directories or explicit split files")
+        train, val, test = ratio_split(target, ratios, seed)
+    if not source:
+        raise ValueError(f"no BraTS source cases found for target {target_domain}")
     out = Path(output_root) / target_domain
     write_lines(out / "target_train.txt", train)
     write_lines(out / "target_val.txt", val)

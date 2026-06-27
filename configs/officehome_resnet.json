@@ -1,0 +1,18 @@
+{
+  "dataset": "officehome",
+  "splits": {
+    "source_train": "splits/officehome/Art/source_train.txt",
+    "source_val": "splits/officehome/Art/source_val.txt",
+    "target_train": "splits/officehome/Art/target_train.txt",
+    "target_val": "splits/officehome/Art/target_val.txt",
+    "target_test": "splits/officehome/Art/target_test.txt"
+  },
+  "model": {
+    "backbone": "resnet50"
+  },
+  "training": {
+    "epochs": 30,
+    "batch_size": 64,
+    "output_dir": "outputs/officehome/art"
+  }
+}

@@ -1,0 +1,22 @@
+[project]
+name = "tavo-release"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+  "numpy",
+  "pyyaml",
+  "pillow"
+]
+
+[project.optional-dependencies]
+medical = [
+  "nibabel",
+  "scipy"
+]
+torch = [
+  "torch",
+  "torchvision"
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

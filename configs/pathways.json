@@ -1,0 +1,90 @@
+{
+  "pathways": [
+    {
+      "dataset": "MAMA-MIA",
+      "task": "tumor_segmentation",
+      "backend": "nnUNet",
+      "config": "configs/mamamia_nnunet.json",
+      "targets": ["NACT", "ISPY1", "DUKE", "ISPY2"],
+      "budgets": [50, 150, 250],
+      "selection_methods": ["random", "rds", "less", "orient", "craig", "gradmatch", "kmeans", "kcenter", "diversity"],
+      "tavo_methods": ["tavo_8d_cmaes"],
+      "domain_adaptation_methods": ["dann", "mmd", "advent", "seasa"],
+      "domain_adaptation_trainers": {
+        "dann": "nnUNetTrainerTAVODANN",
+        "mmd": "nnUNetTrainerTAVOMMD",
+        "advent": "nnUNetTrainerTAVOADVENT",
+        "seasa": "nnUNetTrainerTAVOSEASA"
+      },
+      "commands": {
+        "split": "python -m tavo_release.cli split --dataset mamamia --data-root data/mamamia --output-root splits/mamamia_lodo_seed42",
+        "plan": "python -m tavo_release.cli plan --dataset mamamia --output-dir outputs/plans",
+        "collect": "python -m tavo_release.cli collect --dataset mamamia --results-root outputs/nnUNet_results --output outputs/mamamia_results.json"
+      }
+    },
+    {
+      "dataset": "BraTS",
+      "aliases": ["bratz"],
+      "task": "tumor_segmentation",
+      "backend": "EfficientViT",
+      "config": "configs/brats_efficientvit.yaml",
+      "targets": ["C5", "TCGA_LGG", "TCGA_GBM", "UPENN", "IVYGAP"],
+      "budgets": [50, 150, 250],
+      "selection_methods": ["random", "rds", "less", "orient", "craig", "gradmatch", "kmeans", "kcenter", "diversity"],
+      "selection_entrypoints": {
+        "rds": "external/efficientvit/scripts/run_rds.py",
+        "less": "external/efficientvit/scripts/run_less.py",
+        "orient": "external/efficientvit/scripts/run_orient.py",
+        "craig": "external/efficientvit/scripts/run_craig.py",
+        "gradmatch": "external/efficientvit/scripts/run_gradmatch.py",
+        "kmeans": "external/efficientvit/scripts/run_kmeans.py",
+        "kcenter": "external/efficientvit/scripts/run_kcenter.py",
+        "diversity": "external/efficientvit/scripts/run_diversity.py"
+      },
+      "tavo_methods": ["tavo_8d_cmaes"],
+      "tavo_entrypoints": ["external/efficientvit/scripts/search_multi/cma_TARGET_8d_5T.py", "external/efficientvit/scripts/search_multi/cma_TARGET_8d_10T.py"],
+      "domain_adaptation_methods": ["aada", "mme", "lada", "clue"],
+      "domain_adaptation_entrypoints": {
+        "aada": "external/efficientvit/scripts/run_aada.py",
+        "mme": "external/efficientvit/scripts/run_mme.py",
+        "lada": "external/efficientvit/scripts/run_lada.py",
+        "clue": "external/efficientvit/scripts/run_clue.py"
+      },
+      "commands": {
+        "split": "python -m tavo_release.cli split --dataset brats --data-root data/brats --output-root splits/brats --target C5",
+        "plan": "python -m tavo_release.cli plan --dataset brats --output-dir outputs/plans",
+        "collect": "python -m tavo_release.cli collect --dataset brats --results-root outputs/brats --output outputs/brats_results.json"
+      }
+    },
+    {
+      "dataset": "OfficeHome",
+      "task": "image_classification",
+      "backend": "classification",
+      "config": "configs/officehome_resnet.json",
+      "targets": ["Art", "Clipart", "Product", "Real_World"],
+      "budgets": [50, 150, 250],
+      "selection_methods": ["random", "orient", "craig", "kmeans", "coreset", "metric_coreset", "dp4tl", "bilevel", "proto_repair", "transport_smi"],
+      "selection_entrypoints": {
+        "orient": "external/efficientvit/scripts_cls/gen_source_orient_subset.py",
+        "dp4tl": "external/efficientvit/scripts_cls/select_dp4tl_cls.py",
+        "bilevel": "external/efficientvit/scripts_cls/select_bilevel_2shot.py",
+        "proto_repair": "external/efficientvit/scripts_cls/select_proto_repair_2shot.py",
+        "transport_smi": "external/efficientvit/scripts_cls/select_transport_smi_2shot.py"
+      },
+      "tavo_methods": ["tavo_8d_cmaes"],
+      "domain_adaptation_methods": ["dann", "aada", "mme", "lada", "adamatch"],
+      "domain_adaptation_entrypoints": {
+        "dann": "external/efficientvit/scripts_cls/train_cls.py",
+        "aada": "external/efficientvit/scripts_cls/select_aada_2shot.py",
+        "mme": "external/efficientvit/scripts_cls/select_mme_2shot.py",
+        "lada": "external/efficientvit/scripts_cls/select_lada_2shot.py",
+        "adamatch": "external/efficientvit/scripts_cls/select_adamatch_2shot.py"
+      },
+      "commands": {
+        "split": "python -m tavo_release.cli split --dataset officehome --data-root data/officehome --output-root splits/officehome --target Art",
+        "plan": "python -m tavo_release.cli plan --dataset officehome --output-dir outputs/plans",
+        "collect": "python -m tavo_release.cli collect --dataset officehome --results-root outputs/officehome --output outputs/officehome_results.json"
+      }
+    }
+  ]
+}

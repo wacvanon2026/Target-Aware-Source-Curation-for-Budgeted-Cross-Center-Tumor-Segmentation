@@ -8,6 +8,17 @@
       "targets": ["NACT", "ISPY1", "DUKE", "ISPY2"],
       "budgets": [50, 150, 250],
       "selection_methods": ["random", "rds", "less", "orient", "craig", "gradmatch", "kmeans", "kcenter", "diversity"],
+      "score_file_methods": ["rds", "less", "orient", "craig", "gradmatch", "kmeans", "kcenter", "diversity"],
+      "selection_entrypoints": {
+        "rds": "tavo_release.tavo",
+        "less": "tavo_release.tavo",
+        "orient": "tavo_release.tavo",
+        "craig": "tavo_release.tavo",
+        "gradmatch": "tavo_release.tavo",
+        "kmeans": "tavo_release.tavo",
+        "kcenter": "tavo_release.tavo",
+        "diversity": "tavo_release.tavo"
+      },
       "tavo_methods": ["tavo_8d_cmaes"],
       "domain_adaptation_methods": ["dann", "mmd", "advent", "seasa"],
       "domain_adaptation_trainers": {
@@ -31,6 +42,7 @@
       "targets": ["C5", "TCGA_LGG", "TCGA_GBM", "UPENN", "IVYGAP"],
       "budgets": [50, 150, 250],
       "selection_methods": ["random", "rds", "less", "orient", "craig", "gradmatch", "kmeans", "kcenter", "diversity"],
+      "score_file_methods": ["rds", "less", "orient", "craig", "gradmatch", "kmeans", "kcenter", "diversity"],
       "selection_entrypoints": {
         "rds": "external/efficientvit/scripts/run_rds.py",
         "less": "external/efficientvit/scripts/run_less.py",
@@ -66,10 +78,20 @@
       "selection_methods": ["random", "orient", "craig", "kmeans", "coreset", "metric_coreset", "dp4tl", "bilevel", "proto_repair", "transport_smi"],
       "selection_entrypoints": {
         "orient": "external/efficientvit/scripts_cls/gen_source_orient_subset.py",
+        "craig": "external/efficientvit/scripts_cls/select_target_2shot.py",
+        "kmeans": "external/efficientvit/scripts_cls/select_target_2shot.py",
+        "coreset": "external/efficientvit/scripts_cls/select_target_2shot.py",
+        "metric_coreset": "external/efficientvit/scripts_cls/select_target_2shot.py",
         "dp4tl": "external/efficientvit/scripts_cls/select_dp4tl_cls.py",
         "bilevel": "external/efficientvit/scripts_cls/select_bilevel_2shot.py",
         "proto_repair": "external/efficientvit/scripts_cls/select_proto_repair_2shot.py",
         "transport_smi": "external/efficientvit/scripts_cls/select_transport_smi_2shot.py"
+      },
+      "selection_config_patterns": {
+        "craig": "configs_cls/officehome/TARGET/source_SOURCE_target_craig_2shot.yaml",
+        "kmeans": "configs_cls/officehome/TARGET/source_SOURCE_target_kmeans_2shot.yaml",
+        "coreset": "configs_cls/officehome/TARGET/source_SOURCE_target_coreset_2shot.yaml",
+        "metric_coreset": "configs_cls/officehome/TARGET/source_SOURCE_target_metric_coreset_2shot.yaml"
       },
       "tavo_methods": ["tavo_8d_cmaes"],
       "domain_adaptation_methods": ["dann", "aada", "mme", "lada", "adamatch"],

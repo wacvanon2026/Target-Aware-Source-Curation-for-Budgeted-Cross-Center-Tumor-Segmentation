@@ -1,1 +1,1 @@
-__all__ = ["common", "tavo", "mamamia", "brats", "officehome"]
+__all__ = ["common", "tavo", "mamamia", "brats", "officehome", "pathways"]

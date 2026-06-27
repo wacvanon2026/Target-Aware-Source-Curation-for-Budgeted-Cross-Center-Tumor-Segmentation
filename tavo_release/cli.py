@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-from . import brats, domain_adaptation, mamamia, matrix, officehome
+from . import brats, domain_adaptation, mamamia, matrix, officehome, pathways
 from .common import download_file, run_command, scan_for_forbidden_paths, scan_for_large_or_binary, write_json
 from .pipeline import write_plan
 from .tavo import run_score_file_search, write_selection
@@ -93,6 +93,13 @@ def cmd_da_config(args):
 
 def cmd_da_command(args):
     return {"train": domain_adaptation.build_train_command(args.config)}
+
+
+def cmd_pathway_audit(args):
+    result = pathways.audit_pathways(args.pathways)
+    if not result["ok"]:
+        raise SystemExit(json.dumps(result, indent=2))
+    return result
 
 
 def cmd_collect(args):
@@ -266,6 +273,8 @@ def main(argv: list[str] | None = None) -> int:
     plan.add_argument("--output-dir", required=True)
     methods = sub.add_parser("matrix")
     methods.add_argument("--experiments", action="store_true")
+    audit = sub.add_parser("pathway-audit")
+    audit.add_argument("--pathways", default="configs/pathways.json")
     smoke = sub.add_parser("smoke")
     smoke.add_argument("--workdir")
     check = sub.add_parser("check")
@@ -283,6 +292,7 @@ def main(argv: list[str] | None = None) -> int:
         "officehome-config": cmd_officehome_config,
         "plan": cmd_plan,
         "matrix": cmd_matrix,
+        "pathway-audit": cmd_pathway_audit,
         "smoke": cmd_smoke,
         "check": cmd_check,
     }[args.cmd](args)

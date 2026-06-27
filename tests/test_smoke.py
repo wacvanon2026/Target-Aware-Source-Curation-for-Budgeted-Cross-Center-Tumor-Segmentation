@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from tavo_release.common import forbidden_text_hits, release_audit, scan_tracked_forbidden_text, scan_tracked_release_files, tracked_file_issues
+from tavo_release.common import forbidden_text_hits, release_audit, scan_git_messages, scan_tracked_forbidden_text, scan_tracked_release_files, tracked_file_issues
 from tavo_release.cli import main
 from tavo_release.docs import readme_audit
 from tavo_release.domain_adaptation import build_config, build_train_command
@@ -84,6 +84,7 @@ def test_release_audit():
 
 def test_tracked_text_audit_covers_hidden_files():
     assert scan_tracked_forbidden_text(".") == []
+    assert scan_git_messages(".") == []
     needle = "/" + "project" + "2" + "/"
     assert forbidden_text_hits(".gitignore", needle + "x") == [(".gitignore", needle)]
 

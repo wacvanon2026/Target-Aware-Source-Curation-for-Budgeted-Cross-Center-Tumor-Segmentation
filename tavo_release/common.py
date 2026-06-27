@@ -261,6 +261,24 @@ def scan_git_authors(root: str | Path) -> list[tuple[str, str, str]]:
     return hits
 
 
+def scan_git_messages(root: str | Path) -> list[tuple[str, str]]:
+    base = Path(root)
+    proc = subprocess.run(["git", "log", "--format=%H%x00%B%x00ENDCOMMIT"], cwd=base, text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False)
+    if proc.returncode != 0:
+        return []
+    hits = []
+    for block in proc.stdout.split("\0ENDCOMMIT"):
+        if not block.strip():
+            continue
+        parts = block.split("\0", 1)
+        if len(parts) != 2:
+            continue
+        commit, message = parts
+        for _, needle in forbidden_text_hits("git", message):
+            hits.append((commit.strip(), needle))
+    return hits
+
+
 def tracked_files(root: str | Path) -> list[Path]:
     base = Path(root)
     proc = subprocess.run(["git", "ls-files", "-z"], cwd=base, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False)
@@ -325,5 +343,6 @@ def release_audit(root: str | Path) -> dict:
         "large_files": scan_for_large_or_binary(base),
         "comment_hits": scan_for_comment_syntax(base),
         "git_author_hits": scan_git_authors(base),
+        "git_message_hits": scan_git_messages(base),
         "tracked_file_hits": scan_tracked_release_files(base),
     }

@@ -16,6 +16,8 @@ def test_smoke(tmp_path: Path):
 def test_pathway_audit():
     result = audit_pathways("configs/pathways.json")
     assert result["ok"], result["errors"]
+    result = audit_pathways(Path("configs") / "pathways.json")
+    assert result["ok"], result["errors"]
 
 
 def test_tavo_routes_are_8d():

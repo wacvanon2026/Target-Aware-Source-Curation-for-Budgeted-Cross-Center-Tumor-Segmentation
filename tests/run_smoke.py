@@ -15,6 +15,9 @@ with TemporaryDirectory(prefix="tavo_release_test_") as tmp:
     audit = audit_pathways("configs/pathways.json")
     if not audit["ok"]:
         raise SystemExit(audit["errors"])
+    moved_audit = audit_pathways(Path("configs") / "pathways.json")
+    if not moved_audit["ok"]:
+        raise SystemExit(moved_audit["errors"])
     release = release_audit(".")
     if any(release.values()):
         raise SystemExit(release)

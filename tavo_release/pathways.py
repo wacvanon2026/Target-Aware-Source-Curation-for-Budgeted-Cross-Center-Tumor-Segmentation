@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from .domain_adaptation import BRATS_ENTRYPOINTS, MAMAMIA_TRAINERS, OFFICEHOME_ENTRYPOINTS
 from .matrix import BUDGETS, DATASET_METHODS, SCORE_METHODS_8D
 
 
@@ -39,7 +40,19 @@ def tavo_route_present(spec: dict) -> bool:
     return set(SCORE_METHODS_8D).issubset(score_methods)
 
 
+def expected_da_manifest(dataset_key: str) -> tuple[str, dict[str, str]]:
+    if dataset_key == "mamamia":
+        return "domain_adaptation_trainers", MAMAMIA_TRAINERS
+    if dataset_key == "brats":
+        return "domain_adaptation_entrypoints", BRATS_ENTRYPOINTS
+    if dataset_key == "officehome":
+        return "domain_adaptation_entrypoints", OFFICEHOME_ENTRYPOINTS
+    raise ValueError(dataset_key)
+
+
 def audit_pathways(path: str | Path = "configs/pathways.json") -> dict:
+    path = Path(path)
+    root = path.parent.parent if path.parent.name == "configs" else Path(".")
     specs = load_pathways(path)
     errors = []
     seen = {spec.get("dataset"): spec for spec in specs}
@@ -49,6 +62,9 @@ def audit_pathways(path: str | Path = "configs/pathways.json") -> dict:
             errors.append(f"missing dataset pathway: {public_name}")
             continue
         expected = DATASET_METHODS[dataset_key]
+        config = spec.get("config")
+        if not config or not (root / config).exists():
+            errors.append(f"{public_name} config missing: {config}")
         if tuple(spec.get("budgets", [])) != BUDGETS:
             errors.append(f"{public_name} budgets mismatch")
         for field, family in (("selection_methods", "selection"), ("tavo_methods", "tavo"), ("domain_adaptation_methods", "domain_adaptation")):
@@ -70,6 +86,9 @@ def audit_pathways(path: str | Path = "configs/pathways.json") -> dict:
         for method in spec.get("domain_adaptation_methods", []):
             if not domain_adaptation_route_present(spec, method):
                 errors.append(f"{public_name} domain adaptation route missing: {method}")
+        route_key, route_values = expected_da_manifest(dataset_key)
+        if spec.get(route_key, {}) != route_values:
+            errors.append(f"{public_name} {route_key} mismatch")
         if not tavo_route_present(spec):
             errors.append(f"{public_name} TAVO route missing")
     return {"ok": not errors, "errors": errors, "datasets": sorted(seen)}

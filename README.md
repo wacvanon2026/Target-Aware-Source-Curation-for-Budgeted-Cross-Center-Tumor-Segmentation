@@ -22,6 +22,13 @@ Write a combined execution plan:
 PYTHONPATH=. python -m tavo_release.cli plan --dataset all --output-dir outputs/plans
 ```
 
+Audit released pathway coverage:
+
+```bash
+PYTHONPATH=. python -m tavo_release.cli pathway-audit --pathways configs/pathways.json
+PYTHONPATH=. python -m tavo_release.cli route-audit --pathways configs/pathways.json
+```
+
 The pathway registry is `configs/pathways.json`. It records the three experiment tracks, the eight 8D TAVO source valuation criteria, the dataset-specific TAVO entrypoints, and the domain-adaptation entrypoints. The `external/efficientvit` and `external/nnunet` directories are runtime integration points for code trees supplied by the runner; they are not data or checkpoint folders.
 
 Generic archive download:

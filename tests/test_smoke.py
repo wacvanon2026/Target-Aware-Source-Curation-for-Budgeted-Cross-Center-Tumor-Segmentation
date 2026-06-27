@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 from tavo_release.common import release_audit
@@ -18,6 +19,16 @@ def test_pathway_audit():
     assert result["ok"], result["errors"]
     result = audit_pathways(Path("configs") / "pathways.json")
     assert result["ok"], result["errors"]
+
+
+def test_pathway_audit_rejects_extra_methods(tmp_path: Path):
+    data = json.loads(Path("configs/pathways.json").read_text())
+    data["pathways"][0]["selection_methods"].append("stale_method")
+    path = tmp_path / "pathways.json"
+    path.write_text(json.dumps(data))
+    result = audit_pathways(path)
+    assert not result["ok"]
+    assert any("extra selection_methods" in error for error in result["errors"])
 
 
 def test_tavo_routes_are_8d():

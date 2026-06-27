@@ -9,7 +9,7 @@ import numpy as np
 from PIL import Image
 
 from . import brats, domain_adaptation, mamamia, matrix, officehome, pathways, tavo_routes
-from .common import download_file, run_command, scan_for_forbidden_paths, scan_for_large_or_binary, write_json
+from .common import download_file, release_audit, run_command, scan_for_forbidden_paths, scan_for_large_or_binary, write_json
 from .pipeline import write_plan
 from .tavo import run_score_file_search, write_selection
 
@@ -210,7 +210,10 @@ def cmd_smoke(args):
 
 def cmd_check(args):
     root = Path(args.root)
-    return {"forbidden_hits": scan_for_forbidden_paths(root), "large_files": scan_for_large_or_binary(root)}
+    result = release_audit(root)
+    if any(result.values()):
+        raise SystemExit(json.dumps(result, indent=2))
+    return result
 
 
 def cmd_plan(args):

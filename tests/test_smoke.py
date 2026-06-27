@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from tavo_release.common import release_audit
 from tavo_release.cli import main
 from tavo_release.pathways import audit_pathways
 from tavo_release.tavo_routes import search_command
@@ -19,3 +20,8 @@ def test_tavo_routes_are_8d():
         cmd = search_command(dataset, target, 50)
         assert cmd.count("--score") == 8
         assert cmd[0:4] == ["python", "-m", "tavo_release.cli", "search"]
+
+
+def test_release_audit():
+    result = release_audit(".")
+    assert not any(result.values()), result

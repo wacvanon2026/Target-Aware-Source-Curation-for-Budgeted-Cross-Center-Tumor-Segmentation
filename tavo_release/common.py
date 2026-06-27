@@ -24,6 +24,9 @@ FORBIDDEN_TEXT = tuple(
     ]
 )
 SKIP_DIRS = {"data", "datasets", "raw", "preprocessed", "results", "outputs", "runs", "logs", "checkpoints", "models", "weights", "wandb", ".git", "__pycache__", ".pytest_cache", ".mypy_cache"}
+TEXT_SUFFIXES = {".py", ".sh", ".md", ".txt", ".yaml", ".yml", ".json", ".toml"}
+COMMENT_SUFFIXES = {".py", ".sh", ".yaml", ".yml", ".json", ".toml"}
+BLOCKED_BINARY_SUFFIXES = {".pt", ".pth", ".ckpt", ".pkl", ".npy", ".npz", ".nii", ".gz", ".zip", ".tar", ".tgz", ".7z", ".h5", ".hdf5"}
 
 
 @dataclass(frozen=True)
@@ -169,15 +172,28 @@ def run_command(cmd: Sequence[str], cwd: str | Path | None = None, dry_run: bool
     return subprocess.run([str(x) for x in cmd], cwd=cwd, env=merged, check=True).returncode
 
 
+def skipped(path: Path, base: Path) -> bool:
+    return any(part in SKIP_DIRS for part in path.relative_to(base).parts[:-1])
+
+
+def scannable_files(root: str | Path, suffixes: set[str] | None = None) -> list[Path]:
+    base = Path(root)
+    files = []
+    for path in base.rglob("*"):
+        if skipped(path, base):
+            continue
+        if not path.is_file():
+            continue
+        if suffixes is not None and path.suffix.lower() not in suffixes:
+            continue
+        files.append(path)
+    return files
+
+
 def scan_for_forbidden_paths(root: str | Path) -> list[tuple[str, str]]:
     hits = []
     base = Path(root)
-    suffixes = {".py", ".sh", ".md", ".txt", ".yaml", ".yml", ".json", ".toml"}
-    for path in base.rglob("*"):
-        if any(part in SKIP_DIRS for part in path.relative_to(base).parts[:-1]):
-            continue
-        if not path.is_file() or path.suffix.lower() not in suffixes:
-            continue
+    for path in scannable_files(base, TEXT_SUFFIXES):
         try:
             text = path.read_text(errors="ignore")
         except OSError:
@@ -191,13 +207,47 @@ def scan_for_forbidden_paths(root: str | Path) -> list[tuple[str, str]]:
 def scan_for_large_or_binary(root: str | Path, max_bytes: int = 1_000_000) -> list[tuple[str, int]]:
     hits = []
     base = Path(root)
-    blocked = {".pt", ".pth", ".ckpt", ".pkl", ".npy", ".npz", ".nii", ".gz", ".zip", ".tar", ".tgz", ".7z", ".h5", ".hdf5"}
-    for path in base.rglob("*"):
-        if any(part in SKIP_DIRS for part in path.relative_to(base).parts[:-1]):
-            continue
-        if not path.is_file():
-            continue
+    for path in scannable_files(base):
         size = path.stat().st_size
-        if size > max_bytes or path.suffix.lower() in blocked or path.name.endswith(".nii.gz"):
+        if size > max_bytes or path.suffix.lower() in BLOCKED_BINARY_SUFFIXES or path.name.endswith(".nii.gz"):
             hits.append((str(path.relative_to(base)), size))
     return hits
+
+
+def scan_for_comment_syntax(root: str | Path) -> list[tuple[str, int, str]]:
+    hits = []
+    base = Path(root)
+    doc_marker = '"' * 3
+    for path in scannable_files(base, COMMENT_SUFFIXES):
+        try:
+            lines = path.read_text(errors="ignore").splitlines()
+        except OSError:
+            continue
+        for idx, line in enumerate(lines, start=1):
+            stripped = line.strip()
+            if stripped.startswith("#") or doc_marker in line:
+                hits.append((str(path.relative_to(base)), idx, stripped[:120]))
+    return hits
+
+
+def scan_git_authors(root: str | Path) -> list[tuple[str, str, str]]:
+    base = Path(root)
+    proc = subprocess.run(["git", "log", "--format=%H%x09%an%x09%ae", "--all"], cwd=base, text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False)
+    if proc.returncode != 0:
+        return []
+    hits = []
+    for line in proc.stdout.splitlines():
+        commit, name, email = line.split("\t", 2)
+        if name != "Anonymous Authors" or email != "anonymous@example.com":
+            hits.append((commit, name, email))
+    return hits
+
+
+def release_audit(root: str | Path) -> dict:
+    base = Path(root)
+    return {
+        "forbidden_hits": scan_for_forbidden_paths(base),
+        "large_files": scan_for_large_or_binary(base),
+        "comment_hits": scan_for_comment_syntax(base),
+        "git_author_hits": scan_git_authors(base),
+    }

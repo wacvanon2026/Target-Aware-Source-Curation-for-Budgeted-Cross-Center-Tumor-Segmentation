@@ -19,6 +19,7 @@ KNOWN_COMMANDS = {
     "plan-audit",
     "route-audit",
     "route-inventory",
+    "repro-smoke",
     "search",
     "select",
     "selection-route",

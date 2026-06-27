@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-from . import brats, docs, domain_adaptation, mamamia, matrix, officehome, pathways, selection_routes, tavo_routes
+from . import brats, docs, domain_adaptation, mamamia, matrix, officehome, pathways, repro, selection_routes, tavo_routes
 from .common import download_file, release_audit, run_command, scan_for_forbidden_paths, scan_for_large_or_binary, write_json
 from .pipeline import audit_plan, write_plan
 from .tavo import run_score_file_search, write_selection
@@ -250,6 +250,10 @@ def cmd_docs_audit(args):
     return result
 
 
+def cmd_repro_smoke(args):
+    return repro.run_repro_smoke(args.workdir)
+
+
 def cmd_officehome_config(args):
     return {"config": str(officehome.build_config(args.output, args.split_dir, args.output_dir, backbone=args.backbone, epochs=args.epochs, batch_size=args.batch_size))}
 
@@ -332,6 +336,8 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("plan-audit")
     docs_audit = sub.add_parser("docs-audit")
     docs_audit.add_argument("--readme", default="README.md")
+    repro_smoke = sub.add_parser("repro-smoke")
+    repro_smoke.add_argument("--workdir")
     methods = sub.add_parser("matrix")
     methods.add_argument("--experiments", action="store_true")
     audit = sub.add_parser("pathway-audit")
@@ -358,6 +364,7 @@ def main(argv: list[str] | None = None) -> int:
         "plan": cmd_plan,
         "plan-audit": cmd_plan_audit,
         "docs-audit": cmd_docs_audit,
+        "repro-smoke": cmd_repro_smoke,
         "matrix": cmd_matrix,
         "pathway-audit": cmd_pathway_audit,
         "smoke": cmd_smoke,

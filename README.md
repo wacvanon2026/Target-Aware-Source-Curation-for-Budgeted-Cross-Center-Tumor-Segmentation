@@ -130,6 +130,7 @@ Run:
 ```bash
 bash scripts/smoke.sh
 bash scripts/check_release.sh
+PYTHONPATH=. python -m tavo_release.cli repro-smoke
 PYTHONPATH=. python tests/run_smoke.py
 ```
 

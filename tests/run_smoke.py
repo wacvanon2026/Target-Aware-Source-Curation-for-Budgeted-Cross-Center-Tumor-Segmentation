@@ -13,6 +13,9 @@ from tavo_release.tavo_routes import search_command
 
 with TemporaryDirectory(prefix="tavo_release_test_") as tmp:
     code = main(["smoke", "--workdir", str(Path(tmp))])
+    repro_code = main(["repro-smoke", "--workdir", str(Path(tmp) / "repro")])
+    if repro_code != 0:
+        raise SystemExit(repro_code)
     audit = audit_pathways("configs/pathways.json")
     if not audit["ok"]:
         raise SystemExit(audit["errors"])

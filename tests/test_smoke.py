@@ -15,6 +15,10 @@ def test_smoke(tmp_path: Path):
     assert main(["smoke", "--workdir", str(tmp_path)]) == 0
 
 
+def test_repro_smoke(tmp_path: Path):
+    assert main(["repro-smoke", "--workdir", str(tmp_path)]) == 0
+
+
 def test_pathway_audit():
     result = audit_pathways("configs/pathways.json")
     assert result["ok"], result["errors"]

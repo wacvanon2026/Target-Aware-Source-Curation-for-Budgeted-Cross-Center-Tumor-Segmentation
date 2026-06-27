@@ -26,7 +26,7 @@ DATASET_METHODS = {
         "name": "OfficeHome",
         "task": "image_classification",
         "training": "classification",
-        "selection": ("random", "orient", "craig", "kmeans", "coreset", "metric_coreset", "dp4tl", "bilevel", "proto_repair", "transport_smi"),
+        "selection": ("random", *SCORE_METHODS_8D, "coreset", "metric_coreset", "dp4tl", "bilevel", "proto_repair", "transport_smi"),
         "tavo": ("tavo_8d_cmaes",),
         "domain_adaptation": ("dann", "aada", "mme", "lada", "adamatch"),
         "targets": ("Art", "Clipart", "Product", "Real_World"),

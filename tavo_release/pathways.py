@@ -64,6 +64,9 @@ def audit_pathways(path: str | Path = "configs/pathways.json") -> dict:
         for method in spec.get("selection_methods", []):
             if not selection_route_present(spec, method):
                 errors.append(f"{public_name} selection route missing: {method}")
+        missing_score_selections = [method for method in SCORE_METHODS_8D if method not in spec.get("selection_methods", [])]
+        if missing_score_selections:
+            errors.append(f"{public_name} missing 8D selection methods: {missing_score_selections}")
         for method in spec.get("domain_adaptation_methods", []):
             if not domain_adaptation_route_present(spec, method):
                 errors.append(f"{public_name} domain adaptation route missing: {method}")

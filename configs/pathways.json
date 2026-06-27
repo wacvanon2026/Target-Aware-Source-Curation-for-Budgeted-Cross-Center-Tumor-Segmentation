@@ -76,7 +76,7 @@
       "config": "configs/officehome_resnet.json",
       "targets": ["Art", "Clipart", "Product", "Real_World"],
       "budgets": [50, 150, 250],
-      "selection_methods": ["random", "orient", "craig", "kmeans", "coreset", "metric_coreset", "dp4tl", "bilevel", "proto_repair", "transport_smi"],
+      "selection_methods": ["random", "rds", "less", "orient", "craig", "gradmatch", "kmeans", "kcenter", "diversity", "coreset", "metric_coreset", "dp4tl", "bilevel", "proto_repair", "transport_smi"],
       "score_file_methods": ["rds", "less", "orient", "craig", "gradmatch", "kmeans", "kcenter", "diversity"],
       "selection_entrypoints": {
         "orient": "external/efficientvit/scripts_cls/gen_source_orient_subset.py",

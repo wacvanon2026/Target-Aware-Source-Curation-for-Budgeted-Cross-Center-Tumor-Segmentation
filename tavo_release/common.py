@@ -205,6 +205,23 @@ def scan_for_forbidden_paths(root: str | Path) -> list[tuple[str, str]]:
     return hits
 
 
+def forbidden_text_hits(path: str, text: str) -> list[tuple[str, str]]:
+    return [(path, needle) for needle in FORBIDDEN_TEXT if needle in text]
+
+
+def decode_text_file(path: Path) -> str | None:
+    try:
+        data = path.read_bytes()
+    except OSError:
+        return None
+    if b"\0" in data:
+        return None
+    try:
+        return data.decode()
+    except UnicodeDecodeError:
+        return data.decode(errors="ignore")
+
+
 def scan_for_large_or_binary(root: str | Path, max_bytes: int = 1_000_000) -> list[tuple[str, int]]:
     hits = []
     base = Path(root)
@@ -289,10 +306,22 @@ def scan_tracked_release_files(root: str | Path, max_bytes: int = 1_000_000) -> 
     return hits
 
 
+def scan_tracked_forbidden_text(root: str | Path) -> list[tuple[str, str]]:
+    hits = []
+    base = Path(root)
+    for path in tracked_files(base):
+        text = decode_text_file(path)
+        if text is None:
+            continue
+        hits.extend(forbidden_text_hits(str(path.relative_to(base)), text))
+    return hits
+
+
 def release_audit(root: str | Path) -> dict:
     base = Path(root)
     return {
         "forbidden_hits": scan_for_forbidden_paths(base),
+        "tracked_forbidden_hits": scan_tracked_forbidden_text(base),
         "large_files": scan_for_large_or_binary(base),
         "comment_hits": scan_for_comment_syntax(base),
         "git_author_hits": scan_git_authors(base),

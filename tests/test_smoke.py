@@ -5,7 +5,7 @@ from tavo_release.common import release_audit, scan_tracked_release_files, track
 from tavo_release.cli import main
 from tavo_release.domain_adaptation import build_config, build_train_command
 from tavo_release.pathways import audit_pathways
-from tavo_release.pipeline import combined_plan
+from tavo_release.pipeline import audit_plan, combined_plan
 from tavo_release.selection_routes import route_audit, route_inventory, selection_route
 from tavo_release.tavo_routes import search_command
 
@@ -56,6 +56,8 @@ def test_combined_plan_covers_mamamia_selection_and_tavo_search():
     assert "mamamia_NACT_rds50_selection" in names
     assert "mamamia_NACT_tavo50_search" in names
     assert "mamamia_NACT_tavo50" in names
+    result = audit_plan()
+    assert result["ok"], result["errors"]
 
 
 def test_release_audit():

@@ -10,7 +10,7 @@ from PIL import Image
 
 from . import brats, domain_adaptation, mamamia, matrix, officehome, pathways, selection_routes, tavo_routes
 from .common import download_file, release_audit, run_command, scan_for_forbidden_paths, scan_for_large_or_binary, write_json
-from .pipeline import write_plan
+from .pipeline import audit_plan, write_plan
 from .tavo import run_score_file_search, write_selection
 
 
@@ -236,6 +236,13 @@ def cmd_plan(args):
     return write_plan(args.dataset, args.output_dir)
 
 
+def cmd_plan_audit(args):
+    result = audit_plan()
+    if not result["ok"]:
+        raise SystemExit(json.dumps(result, indent=2))
+    return result
+
+
 def cmd_officehome_config(args):
     return {"config": str(officehome.build_config(args.output, args.split_dir, args.output_dir, backbone=args.backbone, epochs=args.epochs, batch_size=args.batch_size))}
 
@@ -314,6 +321,7 @@ def main(argv: list[str] | None = None) -> int:
     plan = sub.add_parser("plan")
     plan.add_argument("--dataset", choices=["mamamia", "brats", "officehome", "all"], required=True)
     plan.add_argument("--output-dir", required=True)
+    sub.add_parser("plan-audit")
     methods = sub.add_parser("matrix")
     methods.add_argument("--experiments", action="store_true")
     audit = sub.add_parser("pathway-audit")
@@ -338,6 +346,7 @@ def main(argv: list[str] | None = None) -> int:
         "collect": cmd_collect,
         "officehome-config": cmd_officehome_config,
         "plan": cmd_plan,
+        "plan-audit": cmd_plan_audit,
         "matrix": cmd_matrix,
         "pathway-audit": cmd_pathway_audit,
         "smoke": cmd_smoke,

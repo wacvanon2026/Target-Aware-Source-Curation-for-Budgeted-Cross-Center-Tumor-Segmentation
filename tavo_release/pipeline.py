@@ -4,7 +4,7 @@ import shlex
 from pathlib import Path
 
 from .common import write_json
-from .matrix import SCORE_METHODS_8D, dataset_methods, method_matrix
+from .matrix import BUDGETS, DATASET_METHODS, SCORE_METHODS_8D, dataset_methods, method_matrix
 from .mamamia import BUDGETS as MAMAMIA_BUDGETS
 from .mamamia import DOMAINS as MAMAMIA_DOMAINS
 from .mamamia import METHODS as MAMAMIA_METHODS
@@ -102,6 +102,57 @@ def officehome_plan(data_root: str = "data/officehome", split_root: str = "split
 
 def combined_plan() -> list[dict]:
     return mamamia_plan() + brats_plan() + officehome_plan()
+
+
+def expected_plan_counts() -> dict[str, int]:
+    selection = sum(len(spec["targets"]) * len(BUDGETS) * len(SCORE_METHODS_8D) for spec in DATASET_METHODS.values())
+    external_selection = sum(len(spec["targets"]) * len(BUDGETS) * len([method for method in spec["selection"] if method not in SCORE_METHODS_8D and method != "random"]) for spec in DATASET_METHODS.values())
+    tavo = sum(len(spec["targets"]) * len(BUDGETS) for spec in DATASET_METHODS.values())
+    da = sum(len(spec["targets"]) * len(BUDGETS) * len(spec["domain_adaptation"]) for spec in DATASET_METHODS.values())
+    return {
+        "steps": 913,
+        "score_selection": selection,
+        "external_selection_route": external_selection,
+        "tavo_search": tavo,
+        "domain_adaptation_config": da,
+        "domain_adaptation_command": da,
+    }
+
+
+def plan_counts(steps: list[dict]) -> dict[str, int]:
+    names = [step["name"] for step in steps]
+    return {
+        "steps": len(steps),
+        "score_selection": sum(name.endswith("_selection") for name in names),
+        "external_selection_route": sum(name.endswith("_selection_route") for name in names),
+        "tavo_search": sum(name.endswith("_search") and "_tavo" in name for name in names),
+        "domain_adaptation_config": sum(name.endswith("_da_config") for name in names),
+        "domain_adaptation_command": sum(name.endswith("_da_command") for name in names),
+    }
+
+
+def audit_plan() -> dict:
+    steps = combined_plan()
+    expected = expected_plan_counts()
+    observed = plan_counts(steps)
+    errors = []
+    for key, value in expected.items():
+        if observed.get(key) != value:
+            errors.append({"field": key, "expected": value, "observed": observed.get(key)})
+    required_names = {
+        "mamamia_NACT_rds50_selection",
+        "mamamia_NACT_tavo50_search",
+        "mamamia_NACT_tavo50",
+        "brats_C5_rds50_selection",
+        "brats_C5_tavo50_search",
+        "officehome_Art_coreset50_selection_route",
+        "officehome_Art_tavo50_search",
+    }
+    names = {step["name"] for step in steps}
+    missing_names = sorted(required_names - names)
+    if missing_names:
+        errors.append({"missing_names": missing_names})
+    return {"ok": not errors, "expected": expected, "observed": observed, "errors": errors}
 
 
 def write_plan(dataset: str, output_dir: str | Path) -> dict:

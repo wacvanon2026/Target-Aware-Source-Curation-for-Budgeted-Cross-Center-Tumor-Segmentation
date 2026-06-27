@@ -27,6 +27,7 @@ SKIP_DIRS = {"data", "datasets", "raw", "preprocessed", "results", "outputs", "r
 TEXT_SUFFIXES = {".py", ".sh", ".md", ".txt", ".yaml", ".yml", ".json", ".toml"}
 COMMENT_SUFFIXES = {".py", ".sh", ".yaml", ".yml", ".json", ".toml"}
 BLOCKED_BINARY_SUFFIXES = {".pt", ".pth", ".ckpt", ".pkl", ".npy", ".npz", ".nii", ".gz", ".zip", ".tar", ".tgz", ".7z", ".h5", ".hdf5"}
+TRACKED_BLOCKED_DIRS = {"data", "datasets", "raw", "preprocessed", "results", "outputs", "runs", "logs", "checkpoints", "models", "weights", "wandb", "__pycache__", ".pytest_cache", ".mypy_cache"}
 
 
 @dataclass(frozen=True)
@@ -243,6 +244,51 @@ def scan_git_authors(root: str | Path) -> list[tuple[str, str, str]]:
     return hits
 
 
+def tracked_files(root: str | Path) -> list[Path]:
+    base = Path(root)
+    proc = subprocess.run(["git", "ls-files", "-z"], cwd=base, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False)
+    if proc.returncode != 0:
+        return []
+    return [base / item.decode() for item in proc.stdout.split(b"\0") if item]
+
+
+def tracked_file_issues(root: str | Path, path: str | Path, max_bytes: int = 1_000_000) -> list[str]:
+    base = Path(root)
+    p = Path(path)
+    rel = p.relative_to(base) if p.is_absolute() else p
+    full = base / rel
+    issues = []
+    if any(part in TRACKED_BLOCKED_DIRS for part in rel.parts[:-1]):
+        issues.append("runtime_directory")
+    suffix = full.suffix.lower()
+    if suffix in BLOCKED_BINARY_SUFFIXES or full.name.endswith(".nii.gz"):
+        issues.append("artifact_suffix")
+    try:
+        if full.exists() and not full.is_symlink() and full.stat().st_size > max_bytes:
+            issues.append("large_file")
+    except OSError:
+        issues.append("missing_tracked_file")
+    if full.is_symlink():
+        try:
+            target = os.readlink(full)
+        except OSError:
+            issues.append("broken_symlink")
+            return issues
+        if Path(target).is_absolute() or any(needle in target for needle in FORBIDDEN_TEXT):
+            issues.append("unsafe_symlink")
+    return issues
+
+
+def scan_tracked_release_files(root: str | Path, max_bytes: int = 1_000_000) -> list[tuple[str, str]]:
+    hits = []
+    base = Path(root)
+    for path in tracked_files(base):
+        rel = str(path.relative_to(base))
+        for issue in tracked_file_issues(base, path, max_bytes=max_bytes):
+            hits.append((rel, issue))
+    return hits
+
+
 def release_audit(root: str | Path) -> dict:
     base = Path(root)
     return {
@@ -250,4 +296,5 @@ def release_audit(root: str | Path) -> dict:
         "large_files": scan_for_large_or_binary(base),
         "comment_hits": scan_for_comment_syntax(base),
         "git_author_hits": scan_git_authors(base),
+        "tracked_file_hits": scan_tracked_release_files(base),
     }

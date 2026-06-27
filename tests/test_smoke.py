@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from tavo_release.common import release_audit
+from tavo_release.common import release_audit, scan_tracked_release_files, tracked_file_issues
 from tavo_release.cli import main
 from tavo_release.domain_adaptation import build_config, build_train_command
 from tavo_release.pathways import audit_pathways
@@ -61,6 +61,11 @@ def test_combined_plan_covers_mamamia_selection_and_tavo_search():
 def test_release_audit():
     result = release_audit(".")
     assert not any(result.values()), result
+
+
+def test_tracked_release_audit_rejects_runtime_files(tmp_path: Path):
+    assert scan_tracked_release_files(".") == []
+    assert "runtime_directory" in tracked_file_issues(".", Path("outputs") / "tracked_probe.txt")
 
 
 def test_mamamia_da_command_requires_dataset_id(tmp_path: Path):

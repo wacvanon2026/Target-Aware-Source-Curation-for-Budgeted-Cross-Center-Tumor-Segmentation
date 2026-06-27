@@ -3,6 +3,7 @@ from pathlib import Path
 
 from tavo_release.common import forbidden_text_hits, release_audit, scan_tracked_forbidden_text, scan_tracked_release_files, tracked_file_issues
 from tavo_release.cli import main
+from tavo_release.docs import readme_audit
 from tavo_release.domain_adaptation import build_config, build_train_command
 from tavo_release.pathways import audit_pathways
 from tavo_release.pipeline import audit_plan, combined_plan
@@ -64,6 +65,11 @@ def test_combined_plan_covers_mamamia_selection_and_tavo_search():
     assert "mamamia_NACT_tavo50_search" in names
     assert "mamamia_NACT_tavo50" in names
     result = audit_plan()
+    assert result["ok"], result["errors"]
+
+
+def test_readme_commands_match_release_surface():
+    result = readme_audit("README.md")
     assert result["ok"], result["errors"]
 
 

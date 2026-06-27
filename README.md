@@ -56,7 +56,7 @@ PYTHONPATH=. python -m tavo_release.cli command --dataset mamamia --dataset-id 1
 Generate a domain-adaptation config and command:
 
 ```bash
-PYTHONPATH=. python -m tavo_release.cli da-config --dataset mamamia --method dann --split-dir splits/mamamia_lodo_seed42/NACT --output-dir outputs/mamamia/NACT/dann50 --budget 50 --output configs/generated/mamamia_NACT_dann_50.json --nnunet-dataset-id 9000
+PYTHONPATH=. python -m tavo_release.cli da-config --dataset mamamia --method dann --split-dir splits/mamamia_lodo_seed42/NACT --output-dir outputs/mamamia/NACT/dann50 --budget 50 --output configs/generated/mamamia_NACT_dann_50.json --target NACT --nnunet-dataset-id 9000
 PYTHONPATH=. python -m tavo_release.cli da-command --config configs/generated/mamamia_NACT_dann_50.json
 ```
 
@@ -83,7 +83,7 @@ PYTHONPATH=. python -m tavo_release.cli split --dataset brats --data-root data/b
 Create method selections from score dictionaries:
 
 ```bash
-PYTHONPATH=. python -m tavo_release.cli select --score rds=scores/rds.json --score less=scores/less.json --score orient=scores/orient.json --weight 0.4 0.4 0.2 --budget 50 --output splits/brats/C5/methods/tavo_50.txt
+PYTHONPATH=. python -m tavo_release.cli select --score rds=scores/brats/C5/rds.json --score less=scores/brats/C5/less.json --score orient=scores/brats/C5/orient.json --score craig=scores/brats/C5/craig.json --score gradmatch=scores/brats/C5/gradmatch.json --score kmeans=scores/brats/C5/kmeans.json --score kcenter=scores/brats/C5/kcenter.json --score diversity=scores/brats/C5/diversity.json --weight 1 0 0 0 0 0 0 0 --budget 50 --output splits/brats/C5/methods/rds_50.txt
 ```
 
 Run CMA-ES score fusion:
@@ -95,7 +95,7 @@ PYTHONPATH=. python -m tavo_release.cli search --score rds=scores/brats/C5/rds.j
 BraTS selection and DA scripts are integrated through the EfficientViT pathway entries in `configs/pathways.json`.
 
 ```bash
-PYTHONPATH=. python -m tavo_release.cli da-config --dataset brats --method aada --split-dir splits/brats/C5 --output-dir outputs/brats/C5/aada50 --budget 50 --output configs/generated/brats_C5_aada_50.json
+PYTHONPATH=. python -m tavo_release.cli da-config --dataset brats --method aada --split-dir splits/brats/C5 --output-dir outputs/brats/C5/aada50 --budget 50 --output configs/generated/brats_C5_aada_50.json --target C5
 PYTHONPATH=. python -m tavo_release.cli da-command --config configs/generated/brats_C5_aada_50.json
 ```
 
@@ -119,7 +119,7 @@ PYTHONPATH=. python -m tavo_release.cli split --dataset officehome --data-root d
 OfficeHome classification uses the classification pathway entries in `configs/pathways.json`.
 
 ```bash
-PYTHONPATH=. python -m tavo_release.cli da-config --dataset officehome --method mme --split-dir splits/officehome/Art --output-dir outputs/officehome/Art/mme50 --budget 50 --output configs/generated/officehome_Art_mme_50.json
+PYTHONPATH=. python -m tavo_release.cli da-config --dataset officehome --method mme --split-dir splits/officehome/Art --output-dir outputs/officehome/Art/mme50 --budget 50 --output configs/generated/officehome_Art_mme_50.json --target Art
 PYTHONPATH=. python -m tavo_release.cli da-command --config configs/generated/officehome_Art_mme_50.json
 ```
 

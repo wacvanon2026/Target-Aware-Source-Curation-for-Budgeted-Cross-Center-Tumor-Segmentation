@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from .domain_adaptation import implementation
 from .matrix import BUDGETS, DATASET_METHODS, SCORE_METHODS_8D
 from .pathways import REQUIRED_DATASETS, load_pathways
-from .tavo_routes import selection_command
+from .tavo_routes import search_command, selection_command
 
 
 KEY_TO_PUBLIC = {value: key for key, value in REQUIRED_DATASETS.items()}
@@ -53,7 +54,7 @@ def selection_route(dataset: str, target: str, method: str, budget: int, source:
     raise ValueError(method)
 
 
-def route_inventory(dataset: str = "all", pathways_path: str | Path = "configs/pathways.json") -> list[dict]:
+def selection_inventory(dataset: str = "all", pathways_path: str | Path = "configs/pathways.json") -> list[dict]:
     datasets = DATASET_METHODS if dataset == "all" else {dataset: DATASET_METHODS[dataset]}
     routes = []
     for dataset_key, spec in datasets.items():
@@ -64,24 +65,108 @@ def route_inventory(dataset: str = "all", pathways_path: str | Path = "configs/p
     return routes
 
 
-def route_audit(pathways_path: str | Path = "configs/pathways.json") -> dict:
-    errors = []
-    routes = route_inventory("all", pathways_path=pathways_path)
-    expected = 0
-    seen = set()
-    for dataset, spec in DATASET_METHODS.items():
-        expected += len(spec["targets"]) * len(BUDGETS) * len(spec["selection"])
+def route_inventory(dataset: str = "all", pathways_path: str | Path = "configs/pathways.json", family: str = "selection") -> list[dict]:
+    return family_inventory(family, dataset=dataset, pathways_path=pathways_path)
+
+
+def tavo_route(dataset: str, target: str, budget: int) -> dict:
+    expected = DATASET_METHODS[dataset]
+    if target not in expected["targets"]:
+        raise ValueError(target)
+    if budget not in BUDGETS:
+        raise ValueError(str(budget))
+    return {"dataset": dataset, "target": target, "method": "tavo_8d_cmaes", "budget": budget, "route_type": "score_fusion", "command": search_command(dataset, target, budget)}
+
+
+def mamamia_da_dataset_id(target: str, method: str, budget: int) -> str:
+    target_offset = DATASET_METHODS["mamamia"]["targets"].index(target) * 100
+    method_offset = DATASET_METHODS["mamamia"]["domain_adaptation"].index(method) * 10
+    budget_offset = BUDGETS.index(budget)
+    return str(9000 + target_offset + method_offset + budget_offset)
+
+
+def split_dir(dataset: str, target: str) -> str:
+    if dataset == "mamamia":
+        return f"splits/mamamia_lodo_seed42/{target}"
+    return f"splits/{dataset}/{target}"
+
+
+def domain_adaptation_route(dataset: str, target: str, method: str, budget: int) -> dict:
+    expected = DATASET_METHODS[dataset]
+    if target not in expected["targets"]:
+        raise ValueError(target)
+    if budget not in BUDGETS:
+        raise ValueError(str(budget))
+    if method not in expected["domain_adaptation"]:
+        raise ValueError(method)
+    route = {"dataset": dataset, "target": target, "method": method, "budget": budget, "route_type": "domain_adaptation", "implementation": implementation(dataset, method)}
+    cfg = f"configs/generated/{dataset}_{target}_{method}_{budget}.json"
+    config_command = ["python", "-m", "tavo_release.cli", "da-config", "--dataset", dataset, "--method", method, "--split-dir", split_dir(dataset, target), "--output-dir", f"outputs/{dataset}/{target}/{method}{budget}", "--budget", str(budget), "--output", cfg]
+    if dataset == "mamamia":
+        config_command.extend(["--nnunet-dataset-id", mamamia_da_dataset_id(target, method, budget)])
+    route["config_command"] = config_command
+    route["train_command"] = ["python", "-m", "tavo_release.cli", "da-command", "--config", cfg]
+    return route
+
+
+def family_inventory(family: str, dataset: str = "all", pathways_path: str | Path = "configs/pathways.json") -> list[dict]:
+    if family == "selection":
+        return selection_inventory(dataset, pathways_path=pathways_path)
+    datasets = DATASET_METHODS if dataset == "all" else {dataset: DATASET_METHODS[dataset]}
+    routes = []
+    for dataset_key, spec in datasets.items():
         for target in spec["targets"]:
             for budget in BUDGETS:
-                for method in spec["selection"]:
-                    seen.add((dataset, target, method, budget))
-    observed = {(route["dataset"], route["target"], route["method"], route["budget"]) for route in routes}
-    missing = sorted(seen - observed)
-    extra = sorted(observed - seen)
-    if missing:
-        errors.append({"missing": missing})
-    if extra:
-        errors.append({"extra": extra})
-    if len(routes) != expected:
-        errors.append({"count": len(routes), "expected": expected})
-    return {"ok": not errors, "count": len(routes), "expected": expected, "errors": errors}
+                if family == "tavo":
+                    routes.append(tavo_route(dataset_key, target, budget))
+                elif family == "domain_adaptation":
+                    for method in spec["domain_adaptation"]:
+                        routes.append(domain_adaptation_route(dataset_key, target, method, budget))
+                else:
+                    raise ValueError(family)
+    return routes
+
+
+def expected_keys(family: str) -> set[tuple]:
+    keys = set()
+    for dataset, spec in DATASET_METHODS.items():
+        for target in spec["targets"]:
+            for budget in BUDGETS:
+                if family == "selection":
+                    for method in spec["selection"]:
+                        keys.add((dataset, target, method, budget))
+                elif family == "tavo":
+                    for method in spec["tavo"]:
+                        keys.add((dataset, target, method, budget))
+                elif family == "domain_adaptation":
+                    for method in spec["domain_adaptation"]:
+                        keys.add((dataset, target, method, budget))
+                else:
+                    raise ValueError(family)
+    return keys
+
+
+def observed_keys(routes: list[dict]) -> set[tuple]:
+    return {(route["dataset"], route["target"], route["method"], route["budget"]) for route in routes}
+
+
+def route_audit(pathways_path: str | Path = "configs/pathways.json") -> dict:
+    families = {}
+    ok = True
+    for family in ("selection", "tavo", "domain_adaptation"):
+        routes = family_inventory(family, pathways_path=pathways_path)
+        expected = expected_keys(family)
+        observed = observed_keys(routes)
+        errors = []
+        missing = sorted(expected - observed)
+        extra = sorted(observed - expected)
+        if missing:
+            errors.append({"missing": missing})
+        if extra:
+            errors.append({"extra": extra})
+        if len(routes) != len(expected):
+            errors.append({"count": len(routes), "expected": len(expected)})
+        family_ok = not errors
+        ok = ok and family_ok
+        families[family] = {"ok": family_ok, "count": len(routes), "expected": len(expected), "errors": errors}
+    return {"ok": ok, "families": families}

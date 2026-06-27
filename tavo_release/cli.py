@@ -78,7 +78,7 @@ def cmd_selection_route(args):
 
 
 def cmd_route_inventory(args):
-    routes = selection_routes.route_inventory(args.dataset, pathways_path=args.pathways)
+    routes = selection_routes.family_inventory(args.family, args.dataset, pathways_path=args.pathways)
     return {"count": len(routes), "routes": routes}
 
 
@@ -278,6 +278,7 @@ def main(argv: list[str] | None = None) -> int:
     selection_route.add_argument("--pathways", default="configs/pathways.json")
     route_inventory = sub.add_parser("route-inventory")
     route_inventory.add_argument("--dataset", choices=["mamamia", "brats", "officehome", "all"], default="all")
+    route_inventory.add_argument("--family", choices=["selection", "tavo", "domain_adaptation"], default="selection")
     route_inventory.add_argument("--pathways", default="configs/pathways.json")
     route_audit = sub.add_parser("route-audit")
     route_audit.add_argument("--pathways", default="configs/pathways.json")

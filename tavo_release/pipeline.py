@@ -40,6 +40,12 @@ def mamamia_plan(data_root: str = "data/mamamia", split_root: str = "splits/mama
         for experiment in ("target_only", "source_only", "target_full_source"):
             steps.append({"name": f"mamamia_{target}_{experiment}", "cmd": ["python", "-m", "tavo_release.cli", "command", "--dataset", "mamamia", "--dataset-id", f"{target}:{experiment}"]})
         for budget in MAMAMIA_BUDGETS:
+            for method in dataset_methods("mamamia", "selection"):
+                if method == "random":
+                    continue
+                out = f"{split_root}/{target}/methods/{method}_{budget}.txt"
+                steps.append({"name": f"mamamia_{target}_{method}{budget}_selection", "cmd": ["python", "-m", "tavo_release.cli", "select", *score_args("mamamia", target), "--weight", *one_hot_weight(method), "--budget", str(budget), "--output", out]})
+            steps.append({"name": f"mamamia_{target}_tavo{budget}_search", "cmd": ["python", "-m", "tavo_release.cli", "search", *score_args("mamamia", target), "--budget", str(budget), "--output-dir", f"outputs/mamamia/{target}/tavo{budget}"]})
             for method in ("random", *MAMAMIA_METHODS):
                 steps.append({"name": f"mamamia_{target}_{method}{budget}", "cmd": ["python", "-m", "tavo_release.cli", "command", "--dataset", "mamamia", "--dataset-id", f"{target}:{method}{budget}"]})
             for method in dataset_methods("mamamia", "domain_adaptation"):

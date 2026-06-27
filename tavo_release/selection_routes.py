@@ -150,6 +150,48 @@ def observed_keys(routes: list[dict]) -> set[tuple]:
     return {(route["dataset"], route["target"], route["method"], route["budget"]) for route in routes}
 
 
+def command_value(command: list[str], flag: str) -> str | None:
+    if flag not in command:
+        return None
+    index = command.index(flag) + 1
+    if index >= len(command):
+        return None
+    return command[index]
+
+
+def route_command_errors(family: str, route: dict) -> list[dict]:
+    errors = []
+    prefix = {"dataset": route["dataset"], "target": route["target"], "method": route["method"], "budget": route["budget"]}
+    if family == "selection" and route["method"] in SCORE_METHODS_8D:
+        command = route.get("command", [])
+        if command.count("--score") != len(SCORE_METHODS_8D):
+            errors.append({**prefix, "error": "selection_score_count"})
+        if "--weight" not in command:
+            errors.append({**prefix, "error": "selection_missing_weight"})
+        else:
+            start = command.index("--weight") + 1
+            weights = command[start : start + len(SCORE_METHODS_8D)]
+            if len(weights) != len(SCORE_METHODS_8D) or weights.count("1") != 1:
+                errors.append({**prefix, "error": "selection_weight_shape"})
+        if command_value(command, "--budget") != str(route["budget"]):
+            errors.append({**prefix, "error": "selection_budget"})
+    if family == "tavo":
+        command = route.get("command", [])
+        if command.count("--score") != len(SCORE_METHODS_8D):
+            errors.append({**prefix, "error": "tavo_score_count"})
+        if command_value(command, "--budget") != str(route["budget"]):
+            errors.append({**prefix, "error": "tavo_budget"})
+    if family == "domain_adaptation":
+        command = route.get("config_command", [])
+        if command_value(command, "--target") != route["target"]:
+            errors.append({**prefix, "error": "da_target"})
+        if command_value(command, "--budget") != str(route["budget"]):
+            errors.append({**prefix, "error": "da_budget"})
+        if route["dataset"] == "mamamia" and "--nnunet-dataset-id" not in command:
+            errors.append({**prefix, "error": "da_nnunet_dataset_id"})
+    return errors
+
+
 def route_audit(pathways_path: str | Path = "configs/pathways.json") -> dict:
     families = {}
     ok = True
@@ -166,6 +208,11 @@ def route_audit(pathways_path: str | Path = "configs/pathways.json") -> dict:
             errors.append({"extra": extra})
         if len(routes) != len(expected):
             errors.append({"count": len(routes), "expected": len(expected)})
+        command_errors = []
+        for route in routes:
+            command_errors.extend(route_command_errors(family, route))
+        if command_errors:
+            errors.append({"command_errors": command_errors})
         family_ok = not errors
         ok = ok and family_ok
         families[family] = {"ok": family_ok, "count": len(routes), "expected": len(expected), "errors": errors}

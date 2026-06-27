@@ -6,7 +6,7 @@ from tavo_release.cli import main
 from tavo_release.domain_adaptation import build_config, build_train_command
 from tavo_release.pathways import audit_pathways
 from tavo_release.pipeline import audit_plan, combined_plan
-from tavo_release.selection_routes import route_audit, route_inventory, selection_route
+from tavo_release.selection_routes import route_audit, route_command_errors, route_inventory, selection_route
 from tavo_release.tavo_routes import search_command
 
 
@@ -51,6 +51,7 @@ def test_selection_route_inventory_covers_extra_officehome_methods():
     assert all("--nnunet-dataset-id" in route["config_command"] for route in da_routes)
     da_routes = route_inventory("brats", family="domain_adaptation")
     assert all("--target" in route["config_command"] for route in da_routes)
+    assert not any(route_command_errors("domain_adaptation", route) for route in da_routes)
 
 
 def test_combined_plan_covers_mamamia_selection_and_tavo_search():

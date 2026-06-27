@@ -28,7 +28,7 @@ OFFICEHOME_ENTRYPOINTS = {
 }
 
 
-def build_config(dataset: str, method: str, split_dir: str | Path, output_dir: str | Path, budget: int, output: str | Path) -> Path:
+def build_config(dataset: str, method: str, split_dir: str | Path, output_dir: str | Path, budget: int, output: str | Path, nnunet_dataset_id: int | str | None = None) -> Path:
     if method not in dataset_methods(dataset, "domain_adaptation"):
         raise ValueError(f"unknown domain adaptation method: {method}")
     cfg = {
@@ -44,6 +44,8 @@ def build_config(dataset: str, method: str, split_dir: str | Path, output_dir: s
         "implementation": implementation(dataset, method),
         "training": {"output_dir": str(Path(output_dir)), "save_checkpoints": True},
     }
+    if nnunet_dataset_id is not None:
+        cfg["nnunet_dataset_id"] = int(nnunet_dataset_id)
     return write_json(output, cfg)
 
 
@@ -65,7 +67,9 @@ def build_train_command(config: str | Path) -> list[str]:
     budget = str(cfg["budget"])
     target = cfg.get("target", "target")
     if dataset == "mamamia":
-        dataset_id = str(cfg.get("nnunet_dataset_id", "DATASET_ID"))
+        if "nnunet_dataset_id" not in cfg:
+            raise ValueError("nnunet_dataset_id is required for MAMA-MIA domain adaptation")
+        dataset_id = str(cfg["nnunet_dataset_id"])
         configuration = str(cfg.get("configuration", "2d"))
         fold = str(cfg.get("fold", 0))
         return ["nnUNetv2_train", dataset_id, configuration, fold, "-tr", impl["trainer"]]

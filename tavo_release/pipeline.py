@@ -26,6 +26,13 @@ def one_hot_weight(method: str) -> list[str]:
     return ["1" if name == method else "0" for name in SCORE_METHODS_8D]
 
 
+def mamamia_da_dataset_id(target: str, method: str, budget: int) -> str:
+    target_offset = list(MAMAMIA_DOMAINS).index(target) * 100
+    method_offset = list(dataset_methods("mamamia", "domain_adaptation")).index(method) * 10
+    budget_offset = list(MAMAMIA_BUDGETS).index(budget)
+    return str(9000 + target_offset + method_offset + budget_offset)
+
+
 def mamamia_plan(data_root: str = "data/mamamia", split_root: str = "splits/mamamia_lodo_seed42", results_root: str = "outputs/nnunet_results") -> list[dict]:
     steps = []
     steps.append({"name": "mamamia_split", "cmd": ["python", "-m", "tavo_release.cli", "split", "--dataset", "mamamia", "--data-root", data_root, "--output-root", split_root]})
@@ -37,7 +44,7 @@ def mamamia_plan(data_root: str = "data/mamamia", split_root: str = "splits/mama
                 steps.append({"name": f"mamamia_{target}_{method}{budget}", "cmd": ["python", "-m", "tavo_release.cli", "command", "--dataset", "mamamia", "--dataset-id", f"{target}:{method}{budget}"]})
             for method in dataset_methods("mamamia", "domain_adaptation"):
                 cfg = f"configs/generated/mamamia_{target}_{method}_{budget}.json"
-                steps.append({"name": f"mamamia_{target}_{method}{budget}_da_config", "cmd": ["python", "-m", "tavo_release.cli", "da-config", "--dataset", "mamamia", "--method", method, "--split-dir", f"{split_root}/{target}", "--output-dir", f"outputs/mamamia/{target}/{method}{budget}", "--budget", str(budget), "--output", cfg]})
+                steps.append({"name": f"mamamia_{target}_{method}{budget}_da_config", "cmd": ["python", "-m", "tavo_release.cli", "da-config", "--dataset", "mamamia", "--method", method, "--split-dir", f"{split_root}/{target}", "--output-dir", f"outputs/mamamia/{target}/{method}{budget}", "--budget", str(budget), "--output", cfg, "--nnunet-dataset-id", mamamia_da_dataset_id(target, method, budget)]})
                 steps.append({"name": f"mamamia_{target}_{method}{budget}_da_command", "cmd": ["python", "-m", "tavo_release.cli", "da-command", "--config", cfg]})
     steps.append({"name": "mamamia_collect", "cmd": ["python", "-m", "tavo_release.cli", "collect", "--dataset", "mamamia", "--results-root", results_root, "--output", "outputs/mamamia_results.json"]})
     return steps

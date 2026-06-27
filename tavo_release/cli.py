@@ -91,7 +91,7 @@ def cmd_matrix(args):
 
 
 def cmd_da_config(args):
-    path = domain_adaptation.build_config(args.dataset, args.method, args.split_dir, args.output_dir, args.budget, args.output)
+    path = domain_adaptation.build_config(args.dataset, args.method, args.split_dir, args.output_dir, args.budget, args.output, nnunet_dataset_id=args.nnunet_dataset_id)
     return {"config": str(path)}
 
 
@@ -134,10 +134,10 @@ def make_toy_mamamia(root: Path):
             case_dir = root / "images" / case
             case_dir.mkdir(parents=True, exist_ok=True)
             for channel in ("0000", "0001", "0002"):
-                (case_dir / f"{case}_{channel}.nii.gz").write_text("placeholder")
+                (case_dir / f"{case}_{channel}.nii.gz").write_text("synthetic")
             seg = root / "segmentations" / "expert"
             seg.mkdir(parents=True, exist_ok=True)
-            (seg / f"{case}.nii.gz").write_text("placeholder")
+            (seg / f"{case}.nii.gz").write_text("synthetic")
 
 
 def make_toy_officehome(root: Path):
@@ -268,6 +268,7 @@ def main(argv: list[str] | None = None) -> int:
     da_config.add_argument("--output-dir", required=True)
     da_config.add_argument("--budget", type=int, required=True)
     da_config.add_argument("--output", required=True)
+    da_config.add_argument("--nnunet-dataset-id")
     da_command = sub.add_parser("da-command")
     da_command.add_argument("--config", required=True)
     collect = sub.add_parser("collect")

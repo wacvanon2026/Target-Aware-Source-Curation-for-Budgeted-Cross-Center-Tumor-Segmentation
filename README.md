@@ -22,12 +22,12 @@ Write a combined execution plan:
 PYTHONPATH=. python -m tavo_release.cli plan --dataset all --output-dir outputs/plans
 ```
 
-The pathway registry is `configs/pathways.json`. It records the three experiment tracks, the eight 8D TAVO source valuation criteria, the dataset-specific TAVO entrypoints, and the domain-adaptation entrypoints. The `external/efficientvit` and `external/nnunet` directories are placeholders for code trees supplied at runtime; they are not data or checkpoint folders.
+The pathway registry is `configs/pathways.json`. It records the three experiment tracks, the eight 8D TAVO source valuation criteria, the dataset-specific TAVO entrypoints, and the domain-adaptation entrypoints. The `external/efficientvit` and `external/nnunet` directories are runtime integration points for code trees supplied by the runner; they are not data or checkpoint folders.
 
 Generic archive download:
 
 ```bash
-PYTHONPATH=. python -m tavo_release.cli download --dataset officehome --url https://example.org/officehome.zip --output-dir data/downloads --filename officehome.zip
+PYTHONPATH=. python -m tavo_release.cli download --dataset officehome --url "$OFFICEHOME_ARCHIVE_URL" --output-dir data/downloads --filename officehome.zip
 ```
 
 ## MAMA-MIA
@@ -49,7 +49,7 @@ PYTHONPATH=. python -m tavo_release.cli command --dataset mamamia --dataset-id 1
 Generate a domain-adaptation config and command:
 
 ```bash
-PYTHONPATH=. python -m tavo_release.cli da-config --dataset mamamia --method dann --split-dir splits/mamamia_lodo_seed42/NACT --output-dir outputs/mamamia/NACT/dann50 --budget 50 --output configs/generated/mamamia_NACT_dann_50.json
+PYTHONPATH=. python -m tavo_release.cli da-config --dataset mamamia --method dann --split-dir splits/mamamia_lodo_seed42/NACT --output-dir outputs/mamamia/NACT/dann50 --budget 50 --output configs/generated/mamamia_NACT_dann_50.json --nnunet-dataset-id 9000
 PYTHONPATH=. python -m tavo_release.cli da-command --config configs/generated/mamamia_NACT_dann_50.json
 ```
 
@@ -97,8 +97,9 @@ PYTHONPATH=. python -m tavo_release.cli da-command --config configs/generated/br
 Download from a user-provided archive URL:
 
 ```python
+import os
 from tavo_release.officehome import download_officehome, extract_archive
-archive = download_officehome("https://example.org/officehome.zip", "data/downloads")
+archive = download_officehome(os.environ["OFFICEHOME_ARCHIVE_URL"], "data/downloads")
 extract_archive(archive, "data/officehome")
 ```
 

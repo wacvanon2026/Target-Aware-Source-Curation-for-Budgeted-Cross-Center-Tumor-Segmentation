@@ -10,7 +10,11 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+_SCRIPT_DIR = Path(__file__).resolve().parent
+if _SCRIPT_DIR.parent.name == "nnunet" and _SCRIPT_DIR.parent.parent.name == "external":
+    PROJECT_ROOT = _SCRIPT_DIR.parents[2]
+else:
+    PROJECT_ROOT = _SCRIPT_DIR.parents[1]
 DEFAULT_LOG_DIR = PROJECT_ROOT / "logs" / "mamamia"
 
 EPOCH_RE = re.compile(r": Epoch (\d+)$")
@@ -50,7 +54,7 @@ def prediction_progress(name: str) -> str:
         return ""
     target, experiment = short_name.split("_", 1)
     target_lc = target.lower()
-    project_root = PROJECT_ROOT.parent / "data_selection"
+    project_root = PROJECT_ROOT
     pred_dir = (
         project_root
         / "outputs"

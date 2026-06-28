@@ -7,7 +7,11 @@ if [[ -d "${SUBMIT_DIR}/scripts/mamamia_nnunet" ]]; then
     SCRIPT_DIR="${REPO_ROOT}/scripts/mamamia_nnunet"
 else
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+    if [[ "$(basename "$(dirname "${SCRIPT_DIR}")")" == "nnunet" && "$(basename "$(dirname "$(dirname "${SCRIPT_DIR}")")")" == "external" ]]; then
+        REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
+    else
+        REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+    fi
 fi
 
 TARGET="${1:?usage: post_tavo_job.sh TARGET EXPERIMENT [attempt]}"
@@ -53,7 +57,7 @@ collect_and_push_reports() {
     flock "${LOCK_FILE}" bash -lc "
         set -Eeuo pipefail
         cd '${REPO_ROOT}'
-        python scripts/mamamia_nnunet/collect_results.py \
+        python '${SCRIPT_DIR}/collect_results.py' \
             --csv reports/mamamia_nnunet_lodo_results.csv \
             --markdown reports/mamamia_nnunet_lodo_results.md
         if [[ '${POST_DRY_RUN}' == '1' ]]; then

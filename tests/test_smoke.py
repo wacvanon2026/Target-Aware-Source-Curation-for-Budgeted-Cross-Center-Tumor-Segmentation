@@ -1,5 +1,7 @@
 import json
+import os
 import shlex
+import importlib.util
 from pathlib import Path
 
 from tavo_release.common import forbidden_text_hits, release_audit, scan_git_messages, scan_tracked_forbidden_text, scan_tracked_release_files, tracked_file_issues
@@ -41,6 +43,19 @@ def test_pathway_entrypoints_exist():
                 if token.endswith(".py") and not Path(token).exists():
                     missing.append((spec["dataset"], "tavo_entrypoints", "tavo", token))
     assert missing == []
+
+
+def test_mamamia_helper_release_layout():
+    core_path = Path("external/nnunet/mamamia_nnunet/core.py")
+    spec = importlib.util.spec_from_file_location("mamamia_release_core", core_path)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    assert module.REPO_ROOT == Path.cwd().resolve()
+    assert module.dataset_root() == Path("data/mamamia").resolve()
+    assert module.nnunet_raw_root() == Path("outputs/nnunet/nnUNet_raw").resolve()
+    for script in Path("external/nnunet/mamamia_nnunet").glob("*.sh"):
+        assert os.access(script, os.X_OK), script
 
 
 def test_pathway_audit_rejects_extra_methods(tmp_path: Path):

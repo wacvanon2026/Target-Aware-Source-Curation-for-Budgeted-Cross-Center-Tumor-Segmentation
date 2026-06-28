@@ -2,7 +2,11 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+if [[ "$(basename "$(dirname "${SCRIPT_DIR}")")" == "nnunet" && "$(basename "$(dirname "$(dirname "${SCRIPT_DIR}")")")" == "external" ]]; then
+    REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
+else
+    REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+fi
 
 SUBMIT=0
 FORCE="${FORCE:-0}"
@@ -122,7 +126,7 @@ echo "SBATCH_TIME=${SBATCH_TIME} SBATCH_ACCOUNT=${SBATCH_ACCOUNT} SBATCH_PARTITI
 echo "Targets: ${TARGETS[*]}"
 echo "Experiments: ${EXPERIMENTS[*]}"
 echo "Repo root: ${REPO_ROOT}"
-echo "Project root: ${PROJECT_ROOT:-${REPO_ROOT}/../data_selection}"
+echo "Project root: ${PROJECT_ROOT:-${REPO_ROOT}}"
 echo "CLEAN_PREPROCESSED_ON_SUCCESS=${CLEAN_PREPROCESSED_ON_SUCCESS} CLEAN_PREPROCESSED_ON_ERROR=${CLEAN_PREPROCESSED_ON_ERROR}"
 
 mkdir -p "${REPO_ROOT}/logs/mamamia"

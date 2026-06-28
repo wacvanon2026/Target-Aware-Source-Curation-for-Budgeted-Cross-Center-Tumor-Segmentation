@@ -8,7 +8,7 @@ import os
 import subprocess
 from pathlib import Path
 
-from core import DOMAINS, EXPERIMENTS
+from core import DOMAINS, EXPERIMENTS, REPO_ROOT
 
 
 METHODS = {
@@ -133,7 +133,7 @@ def main() -> None:
     args = parse_args()
     targets = normalize_targets(args.targets)
     script = Path(__file__).resolve().with_name("run_one.sh")
-    repo_root = script.parents[2]
+    repo_root = REPO_ROOT
 
     planned = 0
     submitted = 0

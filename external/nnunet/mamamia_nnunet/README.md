@@ -20,19 +20,19 @@ No raw imaging data belongs in this Git repo. By default, paths are inferred
 from the repo location:
 
 ```text
-<repo>/../data_selection
+<repo>
 ```
 
 For the current checkout at `.`, that
 resolves to `.`. Override with
-`PROJECT_ROOT=/some/other/data_selection` when copying the repo elsewhere.
+`PROJECT_ROOT=/some/runtime/workspace` when copying the repo elsewhere.
 
 That means a copied checkout can keep the same layout without editing scripts:
 
 ```text
 <new-parent>/
   mamamia_new/
-  data_selection/
+  runtime_workspace/
 ```
 
 If the data lives somewhere else, set `PROJECT_ROOT` at submit/runtime.
@@ -100,9 +100,9 @@ To refresh the Tumor Seg 2025-style artifacts:
 
 ```bash
 source "$(conda info --base)/etc/profile.d/conda.sh"
-conda activate data_selection_3_10
-python scripts/mamamia_nnunet/derive_tumorseg2025_selections.py
-python scripts/mamamia_nnunet/materialize_method_selections.py
+conda activate mamamia_nnunet
+python external/nnunet/mamamia_nnunet/derive_tumorseg2025_selections.py
+python external/nnunet/mamamia_nnunet/materialize_method_selections.py
 ```
 
 ## Environment Setup
@@ -111,7 +111,7 @@ The Slurm runner activates a Conda environment before calling nnUNet. By
 default it uses your existing environment name:
 
 ```bash
-CONDA_ENV=data_selection_3_10
+CONDA_ENV=mamamia_nnunet
 ```
 
 That is convenient locally, but collaborators should not rely on being able to
@@ -119,11 +119,10 @@ read or activate another user's Conda environment. They should either create
 their own environment with the same packages, or set `CONDA_ENV` to a shared
 environment maintained by the cluster/project.
 
-To create an independent environment against the repo-adjacent
-`data_selection` tree:
+To create an independent environment for the release checkout:
 
 ```bash
-CONDA_ENV=mamamia_nnunet scripts/mamamia_nnunet/setup_env.sh
+CONDA_ENV=mamamia_nnunet external/nnunet/mamamia_nnunet/setup_env.sh
 ```
 
 If the new environment does not already have GPU PyTorch, install the
@@ -134,26 +133,25 @@ cluster-appropriate PyTorch build by setting `INSTALL_TORCH=1` and overriding
 CONDA_ENV=mamamia_nnunet \
 INSTALL_TORCH=1 \
 TORCH_INSTALL_CMD='python -m pip install torch' \
-scripts/mamamia_nnunet/setup_env.sh
+external/nnunet/mamamia_nnunet/setup_env.sh
 ```
 
 Then submit jobs with the same environment name:
 
 ```bash
-CONDA_ENV=mamamia_nnunet ./scripts/mamamia_nnunet/submit_table2_subset.sh --submit
+CONDA_ENV=mamamia_nnunet ./external/nnunet/mamamia_nnunet/submit_table2_subset.sh --submit
 ```
 
 The setup helper installs the Python packages only. The raw MAMAMIA data and
-the local `externals/MAMA-MIA/nnUNet` checkout must still exist under
-`PROJECT_ROOT`, which defaults to `<repo>/../data_selection`.
+the released TAVO nnU-Net trainer files are installed into the active `nnunetv2` package by the runner. Raw data should be placed under `data/mamamia` or provided with `MAMAMIA_DATASET_ROOT`.
 
 ## Prepare And Validate
 
 ```bash
-python scripts/mamamia_nnunet/build_splits.py --targets all
-python scripts/mamamia_nnunet/materialize_method_selections.py
-python scripts/mamamia_nnunet/build_datasets.py all --targets all --skip-existing
-./scripts/mamamia_nnunet/submit_table2_subset.sh
+python external/nnunet/mamamia_nnunet/build_splits.py --targets all
+python external/nnunet/mamamia_nnunet/materialize_method_selections.py
+python external/nnunet/mamamia_nnunet/build_datasets.py all --targets all --skip-existing
+./external/nnunet/mamamia_nnunet/submit_table2_subset.sh
 ```
 
 The wrapper above does not submit training jobs unless `--submit` is passed.
@@ -163,7 +161,7 @@ The wrapper above does not submit training jobs unless `--submit` is passed.
 All targets and all six rows:
 
 ```bash
-./scripts/mamamia_nnunet/submit_table2_subset.sh --submit
+./external/nnunet/mamamia_nnunet/submit_table2_subset.sh --submit
 ```
 
 Low-storage mode submits the same rows as a dependency chain, one job at a time,
@@ -171,7 +169,7 @@ and removes each row's preprocessed dataset after success or runner error while
 preserving raw data, logs, outputs, and checkpoints:
 
 ```bash
-./scripts/mamamia_nnunet/submit_table2_subset.sh --skip-build --chain --submit
+./external/nnunet/mamamia_nnunet/submit_table2_subset.sh --skip-build --chain --submit
 ```
 
 By default this submits 12-hour jobs on account `YOUR_SLURM_ACCOUNT` and GPUs matching
@@ -201,40 +199,40 @@ with an existing `summary.json` and skips rows that already have an active Slurm
 job:
 
 ```bash
-python scripts/mamamia_nnunet/submit_best_last_reeval.py --submit
+python external/nnunet/mamamia_nnunet/submit_best_last_reeval.py --submit
 ```
 
 Override submission time or GPU features with:
 
 ```bash
-SBATCH_TIME=18:00:00 ./scripts/mamamia_nnunet/submit_table2_subset.sh --submit
-SBATCH_ACCOUNT=other_account ./scripts/mamamia_nnunet/submit_table2_subset.sh --submit
-SBATCH_CONSTRAINT='a100|a40|l40s|v100|p100' ./scripts/mamamia_nnunet/submit_table2_subset.sh --submit
-PROJECT_ROOT=/path/to/data_selection ./scripts/mamamia_nnunet/submit_table2_subset.sh --submit
+SBATCH_TIME=18:00:00 ./external/nnunet/mamamia_nnunet/submit_table2_subset.sh --submit
+SBATCH_ACCOUNT=other_account ./external/nnunet/mamamia_nnunet/submit_table2_subset.sh --submit
+SBATCH_CONSTRAINT='a100|a40|l40s|v100|p100' ./external/nnunet/mamamia_nnunet/submit_table2_subset.sh --submit
+PROJECT_ROOT=/path/to/runtime/workspace ./external/nnunet/mamamia_nnunet/submit_table2_subset.sh --submit
 ```
 
 Only prioritized random rows:
 
 ```bash
-./scripts/mamamia_nnunet/submit_table2_subset.sh --submit random50 random150
+./external/nnunet/mamamia_nnunet/submit_table2_subset.sh --submit random50 random150
 ```
 
 All K50/K150 basic method rows:
 
 ```bash
-./scripts/mamamia_nnunet/submit_table2_subset.sh basic_methods --submit --skip-build
+./external/nnunet/mamamia_nnunet/submit_table2_subset.sh basic_methods --submit --skip-build
 ```
 
 TAVO K50/K150 rows, after the basic rows are complete:
 
 ```bash
-./scripts/mamamia_nnunet/submit_table2_subset.sh tavo --submit --skip-build
+./external/nnunet/mamamia_nnunet/submit_table2_subset.sh tavo --submit --skip-build
 ```
 
 One target only:
 
 ```bash
-./scripts/mamamia_nnunet/submit_table2_subset.sh --targets NACT --submit random50 random150
+./external/nnunet/mamamia_nnunet/submit_table2_subset.sh --targets NACT --submit random50 random150
 ```
 
 ## Domain Alignment Baselines
@@ -260,7 +258,7 @@ independent and lets the same runner handle all MAMAMIA nnUNet rows.
 Dry-run all four methods for one target:
 
 ```bash
-python scripts/mamamia_nnunet/submit_domain_alignment.py \
+python external/nnunet/mamamia_nnunet/submit_domain_alignment.py \
   --targets NACT \
   --experiments target_full_source
 ```
@@ -268,7 +266,7 @@ python scripts/mamamia_nnunet/submit_domain_alignment.py \
 Submit all four methods for all targets:
 
 ```bash
-python scripts/mamamia_nnunet/submit_domain_alignment.py \
+python external/nnunet/mamamia_nnunet/submit_domain_alignment.py \
   --targets all \
   --experiments target_full_source \
   --submit
@@ -285,7 +283,7 @@ NNUNET_NUM_EPOCHS=1 \
 NNUNET_ITERATIONS_PER_EPOCH=2 \
 NNUNET_VAL_ITERATIONS_PER_EPOCH=1 \
 NNUNET_BATCH_SIZE=2 \
-python scripts/mamamia_nnunet/submit_domain_alignment.py \
+python external/nnunet/mamamia_nnunet/submit_domain_alignment.py \
   --methods dann \
   --targets NACT \
   --experiments gradmatch50 \
@@ -300,13 +298,13 @@ If the raw nnUNet datasets have not been built yet, add `--auto-build`, or build
 them first with:
 
 ```bash
-python scripts/mamamia_nnunet/build_datasets.py target_full_source --targets all --skip-existing
+python external/nnunet/mamamia_nnunet/build_datasets.py target_full_source --targets all --skip-existing
 ```
 
 Hyperparameters can be set through the submitter or environment:
 
 ```bash
-python scripts/mamamia_nnunet/submit_domain_alignment.py \
+python external/nnunet/mamamia_nnunet/submit_domain_alignment.py \
   --methods dann advent \
   --lambda 0.05 \
   --domain-lambda 0.1 \
@@ -334,7 +332,7 @@ As jobs finish, collect available foreground-mean Dice values from each test
 `summary.json`:
 
 ```bash
-python scripts/mamamia_nnunet/collect_results.py \
+python external/nnunet/mamamia_nnunet/collect_results.py \
   --csv reports/mamamia_nnunet_lodo_results.csv \
   --markdown reports/mamamia_nnunet_lodo_results.md
 ```
@@ -343,5 +341,5 @@ For live Slurm training metrics, summarize the latest epoch logged by each
 active MAMAMIA nnUNet job:
 
 ```bash
-python scripts/mamamia_nnunet/live_metrics.py
+python external/nnunet/mamamia_nnunet/live_metrics.py
 ```

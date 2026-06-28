@@ -19,14 +19,18 @@ if [[ -d "${SUBMIT_DIR}/scripts/mamamia_nnunet" ]]; then
     SCRIPT_DIR="${REPO_ROOT}/scripts/mamamia_nnunet"
 else
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+    if [[ "$(basename "$(dirname "${SCRIPT_DIR}")")" == "nnunet" && "$(basename "$(dirname "$(dirname "${SCRIPT_DIR}")")")" == "external" ]]; then
+        REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
+    else
+        REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+    fi
 fi
-PROJECT_ROOT="${PROJECT_ROOT:-$(cd "${REPO_ROOT}/.." && pwd)/data_selection}"
-NNUNET_ROOT="${NNUNET_ROOT:-${PROJECT_ROOT}/externals/MAMA-MIA/nnUNet/nnunetv2}"
-RAW_DIR="${NNUNET_RAW:-${NNUNET_ROOT}/nnUNet_raw}"
-PREPROCESSED_DIR="${NNUNET_PREPROCESSED:-${NNUNET_ROOT}/nnUNet_preprocessed}"
-RESULTS_DIR="${NNUNET_RESULTS:-${NNUNET_ROOT}/nnUNet_results_scratch}"
-GT_SOURCE_DIR="${GT_SOURCE_DIR:-${PROJECT_ROOT}/dataset_mamamia/segmentations/expert}"
+PROJECT_ROOT="${PROJECT_ROOT:-${REPO_ROOT}}"
+NNUNET_STORAGE_ROOT="${NNUNET_STORAGE_ROOT:-${PROJECT_ROOT}/outputs/nnunet}"
+RAW_DIR="${NNUNET_RAW:-${NNUNET_STORAGE_ROOT}/nnUNet_raw}"
+PREPROCESSED_DIR="${NNUNET_PREPROCESSED:-${NNUNET_STORAGE_ROOT}/nnUNet_preprocessed}"
+RESULTS_DIR="${NNUNET_RESULTS:-${NNUNET_STORAGE_ROOT}/nnUNet_results_scratch}"
+GT_SOURCE_DIR="${GT_SOURCE_DIR:-${MAMAMIA_DATASET_ROOT:-${PROJECT_ROOT}/data/mamamia}/segmentations/expert}"
 SPLIT_ROOT="${SPLIT_ROOT:-${REPO_ROOT}/splits/mamamia_lodo_seed42}"
 
 TARGET="${TARGET:-NACT}"
@@ -50,7 +54,7 @@ CLEAN_PREPROCESSED_ON_ERROR="${CLEAN_PREPROCESSED_ON_ERROR:-0}"
 CLEAN_UNPACKED_PREPROCESSED_BEFORE_TRAIN="${CLEAN_UNPACKED_PREPROCESSED_BEFORE_TRAIN:-0}"
 BEST_LAST_WINDOW="${BEST_LAST_WINDOW:-10}"
 PREDICT_CHECKPOINT="${PREDICT_CHECKPOINT:-checkpoint_best_last.pth}"
-CONDA_ENV="${CONDA_ENV:-data_selection_3_10}"
+CONDA_ENV="${CONDA_ENV:-mamamia_nnunet}"
 PYTHON_BIN="${PYTHON_BIN:-}"
 if [[ -z "${PYTHON_BIN}" && -x "${CONDA_ENV}/bin/python" ]]; then
     PYTHON_BIN="${CONDA_ENV}/bin/python"
@@ -157,14 +161,14 @@ Environment:
   FORCE=1               rerun even if the test summary exists
   AUTO_BUILD_DATASET=1  create the nnUNet raw dataset first if it is missing
   SKIP_PLAN_PREPROCESS=1 skip nnUNet planning/preprocessing when preprocessed files already exist
-  CONDA_ENV=name        conda environment to activate for nnUNet; default data_selection_3_10
+  CONDA_ENV=name        conda environment to activate for nnUNet; default mamamia_nnunet
   TRAIN_DEVICE=cuda|cpu device passed to nnUNetv2_train; default cuda
   STOP_AFTER_TRAIN=1    stop after best-last checkpoint selection; useful for smoke tests
   CLEAN_PREPROCESSED_ON_SUCCESS=1  remove this dataset's preprocessed dir after successful evaluation
   CLEAN_PREPROCESSED_ON_ERROR=1    remove this dataset's preprocessed dir after a runner error
 
 Path defaults are repo-relative:
-  PROJECT_ROOT defaults to <repo>/../data_selection
+  PROJECT_ROOT defaults to the release repository root
 EOF
 }
 
@@ -307,12 +311,20 @@ export SPLIT_ROOT="${SPLIT_ROOT}"
 if [[ -n "${EXTRA_PYTHONPATH:-}" ]]; then
     export PYTHONPATH="${EXTRA_PYTHONPATH}:${PYTHONPATH:-}"
 fi
-export PYTHONPATH="${PROJECT_ROOT}/externals/MAMA-MIA/nnUNet:${PYTHONPATH:-}"
+export PYTHONPATH="${REPO_ROOT}:${PYTHONPATH:-}"
+
+NNUNET_TRAINER_DIR="${NNUNET_TRAINER_DIR:-$(python - <<'PY'
+from pathlib import Path
+import nnunetv2.training.nnUNetTrainer as trainer_pkg
+print(Path(trainer_pkg.__file__).resolve().parent)
+PY
+)}"
 
 for TRAINER_SRC in "${SCRIPT_DIR}"/nnUNetTrainerTAVO*.py; do
-    TRAINER_DST="${NNUNET_ROOT}/training/nnUNetTrainer/$(basename "${TRAINER_SRC}")"
+    TRAINER_DST="${NNUNET_TRAINER_DIR}/$(basename "${TRAINER_SRC}")"
+    mkdir -p "$(dirname "${TRAINER_DST}")"
     if ! cmp -s "${TRAINER_SRC}" "${TRAINER_DST}"; then
-        log "Installing trainer into nnUNet tree: ${TRAINER_DST}"
+        log "Installing trainer into nnU-Net package: ${TRAINER_DST}"
         TRAINER_TMP="${TRAINER_DST}.${SLURM_JOB_ID:-$$}.tmp"
         cp "${TRAINER_SRC}" "${TRAINER_TMP}"
         chmod 0644 "${TRAINER_TMP}"

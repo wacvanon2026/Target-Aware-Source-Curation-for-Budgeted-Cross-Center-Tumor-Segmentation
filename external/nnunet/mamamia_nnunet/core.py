@@ -14,24 +14,28 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+_SCRIPT_DIR = Path(__file__).resolve().parent
+if _SCRIPT_DIR.parent.name == "nnunet" and _SCRIPT_DIR.parent.parent.name == "external":
+    REPO_ROOT = _SCRIPT_DIR.parents[2]
+else:
+    REPO_ROOT = _SCRIPT_DIR.parents[1]
 
 
 def project_root() -> Path:
     return Path(
-        os.environ.get("MAMAMIA_PROJECT_ROOT", os.environ.get("PROJECT_ROOT", REPO_ROOT.parent / "data_selection"))
+        os.environ.get("MAMAMIA_PROJECT_ROOT", os.environ.get("PROJECT_ROOT", REPO_ROOT))
     ).expanduser().resolve()
 
 
 def dataset_root() -> Path:
     return Path(
-        os.environ.get("MAMAMIA_DATASET_ROOT", os.environ.get("DATASET_ROOT", project_root() / "dataset_mamamia"))
+        os.environ.get("MAMAMIA_DATASET_ROOT", os.environ.get("DATASET_ROOT", project_root() / "data" / "mamamia"))
     ).expanduser().resolve()
 
 
 def nnunet_root() -> Path:
     return Path(
-        os.environ.get("NNUNET_ROOT", project_root() / "externals" / "MAMA-MIA" / "nnUNet" / "nnunetv2")
+        os.environ.get("NNUNET_ROOT", project_root() / "outputs" / "nnunet")
     ).expanduser().resolve()
 
 

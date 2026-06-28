@@ -2,8 +2,12 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
-REPO_ROOT="$(cd -P "${SCRIPT_DIR}/../.." && pwd -P)"
-PROJECT_ROOT="${PROJECT_ROOT:-.}"
+if [[ "$(basename "$(dirname "${SCRIPT_DIR}")")" == "nnunet" && "$(basename "$(dirname "$(dirname "${SCRIPT_DIR}")")")" == "external" ]]; then
+    REPO_ROOT="$(cd -P "${SCRIPT_DIR}/../../.." && pwd -P)"
+else
+    REPO_ROOT="$(cd -P "${SCRIPT_DIR}/../.." && pwd -P)"
+fi
+PROJECT_ROOT="${PROJECT_ROOT:-${REPO_ROOT}}"
 
 SUBMIT=0
 TARGETS=(NACT ISPY1 DUKE ISPY2)
@@ -26,13 +30,13 @@ CROP_SIZE="${CROP_SIZE:-256}"
 SEED="${SEED:-42}"
 SCORE_ONLY=0
 
-SBATCH_ACCOUNT="${SBATCH_ACCOUNT:-karimire_1837}"
+SBATCH_ACCOUNT="${SBATCH_ACCOUNT:-YOUR_SLURM_ACCOUNT}"
 SBATCH_PARTITION="${SBATCH_PARTITION:-gpu}"
 SBATCH_CONSTRAINT="${SBATCH_CONSTRAINT:-a100|a40|l40s|v100}"
 SBATCH_TIME="${SBATCH_TIME:-48:00:00}"
 SBATCH_MEM="${SBATCH_MEM:-48G}"
 SBATCH_CPUS="${SBATCH_CPUS:-8}"
-CONDA_ENV="${CONDA_ENV:-data_selection_3_10}"
+CONDA_ENV="${CONDA_ENV:-mamamia_nnunet}"
 
 usage() {
     cat <<'EOF'
@@ -141,7 +145,7 @@ module load gcc/13.3.0 cuda/12.6.3 cudnn/8.9.7.29-12-cuda conda
 source "\$(conda info --base)/etc/profile.d/conda.sh"
 conda activate "${CONDA_ENV}"
 cd "${REPO_ROOT}"
-python scripts/mamamia_nnunet/run_tavo_8d_cmaes.py \
+python "${SCRIPT_DIR}/run_tavo_8d_cmaes.py" \
   --target "${target}" \
   --budget "${budget}" \
   --project-root "${PROJECT_ROOT}" \

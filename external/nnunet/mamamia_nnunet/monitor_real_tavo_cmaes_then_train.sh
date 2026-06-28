@@ -7,14 +7,22 @@ elif [[ -n "${SLURM_SUBMIT_DIR:-}" && -d "${SLURM_SUBMIT_DIR}/scripts/mamamia_nn
     REPO_ROOT="$(cd -P "${SLURM_SUBMIT_DIR}" && pwd -P)"
 else
     SCRIPT_DIR_FALLBACK="$(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
-    REPO_ROOT="$(cd -P "${SCRIPT_DIR_FALLBACK}/../.." && pwd -P)"
+    if [[ "$(basename "$(dirname "${SCRIPT_DIR_FALLBACK}")")" == "nnunet" && "$(basename "$(dirname "$(dirname "${SCRIPT_DIR_FALLBACK}")")")" == "external" ]]; then
+        REPO_ROOT="$(cd -P "${SCRIPT_DIR_FALLBACK}/../../.." && pwd -P)"
+    else
+        REPO_ROOT="$(cd -P "${SCRIPT_DIR_FALLBACK}/../.." && pwd -P)"
+    fi
 fi
-SCRIPT_DIR="${REPO_ROOT}/scripts/mamamia_nnunet"
+if [[ -d "${REPO_ROOT}/external/nnunet/mamamia_nnunet" ]]; then
+    SCRIPT_DIR="${REPO_ROOT}/external/nnunet/mamamia_nnunet"
+else
+    SCRIPT_DIR="${REPO_ROOT}/scripts/mamamia_nnunet"
+fi
 
 MANIFEST="${1:-${REAL_TAVO_MANIFEST:-}}"
 POLL_SECONDS="${POLL_SECONDS:-300}"
-PROJECT_ROOT="${PROJECT_ROOT:-.}"
-CONDA_ENV="${CONDA_ENV:-data_selection_3_10}"
+PROJECT_ROOT="${PROJECT_ROOT:-${REPO_ROOT}}"
+CONDA_ENV="${CONDA_ENV:-mamamia_nnunet}"
 SBATCH_CONSTRAINT="${SBATCH_CONSTRAINT:-a100|a40|l40s|v100}"
 
 if [[ -z "${MANIFEST}" ]]; then
@@ -62,9 +70,9 @@ done
 echo "[$(date)] real TAVO CMA-ES complete; materializing fresh selections."
 python "${SCRIPT_DIR}/materialize_method_selections.py" --methods tavo --budgets 50 150 250 --strict
 
-RAW_DIR="${PROJECT_ROOT}/externals/MAMA-MIA/nnUNet/nnunetv2/nnUNet_raw"
-PREPROCESSED_DIR="${PROJECT_ROOT}/externals/MAMA-MIA/nnUNet/nnunetv2/nnUNet_preprocessed"
-RESULTS_DIR="${PROJECT_ROOT}/externals/MAMA-MIA/nnUNet/nnunetv2/nnUNet_results_scratch"
+RAW_DIR="${NNUNET_RAW:-${PROJECT_ROOT}/outputs/nnunet/nnUNet_raw}"
+PREPROCESSED_DIR="${NNUNET_PREPROCESSED:-${PROJECT_ROOT}/outputs/nnunet/nnUNet_preprocessed}"
+RESULTS_DIR="${NNUNET_RESULTS:-${PROJECT_ROOT}/outputs/nnunet/nnUNet_results_scratch}"
 
 echo "[$(date)] removing old TAVO nnUNet raw/preprocessed/results/output directories."
 for target in NACT ISPY1 DUKE ISPY2; do

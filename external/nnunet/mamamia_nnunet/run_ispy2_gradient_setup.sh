@@ -16,19 +16,25 @@ set -Eeuo pipefail
 SUBMIT_DIR="${SLURM_SUBMIT_DIR:-$(pwd)}"
 if [[ -d "${SUBMIT_DIR}/scripts/mamamia_nnunet" ]]; then
     REPO_ROOT="$(cd "${SUBMIT_DIR}" && pwd)"
+    SCRIPT_DIR="${REPO_ROOT}/scripts/mamamia_nnunet"
 else
-    REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    if [[ "$(basename "$(dirname "${SCRIPT_DIR}")")" == "nnunet" && "$(basename "$(dirname "$(dirname "${SCRIPT_DIR}")")")" == "external" ]]; then
+        REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
+    else
+        REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+    fi
 fi
-PROJECT_ROOT="${PROJECT_ROOT:-$(cd "${REPO_ROOT}/.." && pwd)/data_selection}"
-NNUNET_ROOT="${NNUNET_ROOT:-${PROJECT_ROOT}/externals/MAMA-MIA/nnUNet/nnunetv2}"
-export REPO_ROOT PROJECT_ROOT
-export nnUNet_raw="${NNUNET_ROOT}/nnUNet_raw"
-export nnUNet_preprocessed="${NNUNET_ROOT}/nnUNet_preprocessed"
-export nnUNet_results="${NNUNET_ROOT}/nnUNet_results_scratch"
-export PYTHONPATH="${PROJECT_ROOT}/externals/MAMA-MIA/nnUNet:${PYTHONPATH:-}"
+PROJECT_ROOT="${PROJECT_ROOT:-${REPO_ROOT}}"
+NNUNET_STORAGE_ROOT="${NNUNET_STORAGE_ROOT:-${PROJECT_ROOT}/outputs/nnunet}"
+export REPO_ROOT PROJECT_ROOT SCRIPT_DIR
+export nnUNet_raw="${NNUNET_RAW:-${NNUNET_STORAGE_ROOT}/nnUNet_raw}"
+export nnUNet_preprocessed="${NNUNET_PREPROCESSED:-${NNUNET_STORAGE_ROOT}/nnUNet_preprocessed}"
+export nnUNet_results="${NNUNET_RESULTS:-${NNUNET_STORAGE_ROOT}/nnUNet_results_scratch}"
+export PYTHONPATH="${REPO_ROOT}:${PYTHONPATH:-}"
 
 source "$(conda info --base)/etc/profile.d/conda.sh"
-conda activate data_selection_3_10
+conda activate "${CONDA_ENV:-mamamia_nnunet}"
 
 TARGET_DS="Dataset1101_MAMAMIA_ISPY2_TARGET_ONLY"
 EXT_DS="Dataset1111_MAMAMIA_ISPY2_EXT_ONLY"
@@ -81,7 +87,7 @@ if [[ ! -f "${CHECKPOINT}" ]]; then
 fi
 GRAD_DIR="${PROJECT_ROOT}/mamamia_ispy2/data/gradients"
 
-python "${REPO_ROOT}/scripts/mamamia_nnunet/extract_case_gradients.py" \
+python "${SCRIPT_DIR}/extract_case_gradients.py" \
     --checkpoint "${CHECKPOINT}" \
     --dataset-dirs "${TARGET_PLAN}" "${EXT_PLAN}" \
     --pool-cases-file "${POOL_CASES_FILE}" \
@@ -90,12 +96,12 @@ python "${REPO_ROOT}/scripts/mamamia_nnunet/extract_case_gradients.py" \
     --proj-dim 4096 \
     --seed 42
 
-python "${REPO_ROOT}/scripts/mamamia_nnunet/derive_tumorseg2025_selections.py" \
+python "${SCRIPT_DIR}/derive_tumorseg2025_selections.py" \
     --targets ISPY2 \
     --methods orient gradmatch craig less \
     --max-rank 250
 
-python "${REPO_ROOT}/scripts/mamamia_nnunet/materialize_method_selections.py" \
+python "${SCRIPT_DIR}/materialize_method_selections.py" \
     --targets ISPY2 \
     --methods orient gradmatch craig less \
     --budgets 50 150 \
@@ -108,7 +114,7 @@ import sys
 from pathlib import Path
 
 repo = Path(os.environ["REPO_ROOT"])
-sys.path.insert(0, str(repo / "scripts" / "mamamia_nnunet"))
+sys.path.insert(0, os.environ["SCRIPT_DIR"])
 from core import EXPERIMENTS, dataset_basename, nnunet_preprocessed_root, nnunet_raw_root, nnunet_results_root
 
 for exp_key in [
@@ -128,7 +134,7 @@ for exp_key in [
             shutil.rmtree(path)
 PY
 
-python "${REPO_ROOT}/scripts/mamamia_nnunet/build_datasets.py" \
+python "${SCRIPT_DIR}/build_datasets.py" \
     gradmatch50 less50 orient50 craig50 gradmatch150 less150 orient150 craig150 \
     --targets ISPY2 \
     --overwrite

@@ -2,22 +2,26 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
-REPO_ROOT="$(cd -P "${SCRIPT_DIR}/../.." && pwd -P)"
-PROJECT_ROOT="${PROJECT_ROOT:-.}"
+if [[ "$(basename "$(dirname "${SCRIPT_DIR}")")" == "nnunet" && "$(basename "$(dirname "$(dirname "${SCRIPT_DIR}")")")" == "external" ]]; then
+    REPO_ROOT="$(cd -P "${SCRIPT_DIR}/../../.." && pwd -P)"
+else
+    REPO_ROOT="$(cd -P "${SCRIPT_DIR}/../.." && pwd -P)"
+fi
+PROJECT_ROOT="${PROJECT_ROOT:-${REPO_ROOT}}"
 
 SUBMIT=0
 TARGETS=(NACT ISPY1 DUKE ISPY2)
 EXPERIMENTS=(all)
 RUN_TAG="${RUN_TAG:-$(date +%Y%m%d_%H%M%S)}"
 
-SBATCH_ACCOUNT="${SBATCH_ACCOUNT:-karimire_1837}"
+SBATCH_ACCOUNT="${SBATCH_ACCOUNT:-YOUR_SLURM_ACCOUNT}"
 SBATCH_COLLECT_ACCOUNT="${SBATCH_COLLECT_ACCOUNT:-YOUR_SLURM_ACCOUNT}"
 SBATCH_PARTITION="${SBATCH_PARTITION:-gpu}"
 SBATCH_CONSTRAINT="${SBATCH_CONSTRAINT:-p100}"
 SBATCH_TIME="${SBATCH_TIME:-12:00:00}"
 SBATCH_MEM="${SBATCH_MEM:-24G}"
 SBATCH_CPUS="${SBATCH_CPUS:-4}"
-CONDA_ENV="${CONDA_ENV:-data_selection_3_10}"
+CONDA_ENV="${CONDA_ENV:-mamamia_nnunet}"
 
 usage() {
     cat <<'EOF'
@@ -58,8 +62,12 @@ while [[ $# -gt 0 ]]; do
             shift
             TARGETS=()
             while [[ $# -gt 0 && "$1" != --* ]]; do
-                TARGETS+=("$(normalize_target "$1")")
-                shift
+                if normalized_target="$(normalize_target "$1")"; then
+                    TARGETS+=("${normalized_target}")
+                    shift
+                else
+                    break
+                fi
             done
             ;;
         -h|--help)
@@ -99,7 +107,7 @@ module load conda
 source "\$(conda info --base)/etc/profile.d/conda.sh"
 conda activate "${CONDA_ENV}"
 cd "${REPO_ROOT}"
-python scripts/mamamia_nnunet/compute_hd95.py "${EXPERIMENTS[@]}" --targets "${target}" --project-root "${PROJECT_ROOT}"
+python "${SCRIPT_DIR}/compute_hd95.py" "${EXPERIMENTS[@]}" --targets "${target}" --project-root "${PROJECT_ROOT}"
 EOF
 )
     if [[ "${SUBMIT}" == "1" ]]; then
@@ -138,7 +146,7 @@ module load conda
 source "\$(conda info --base)/etc/profile.d/conda.sh"
 conda activate "${CONDA_ENV}"
 cd "${REPO_ROOT}"
-python scripts/mamamia_nnunet/collect_results.py --metric HD95 --project-root "${PROJECT_ROOT}" --csv reports/mamamia_nnunet_lodo_hd95_results.csv --markdown reports/mamamia_nnunet_lodo_hd95_results.md
+python "${SCRIPT_DIR}/collect_results.py" --metric HD95 --project-root "${PROJECT_ROOT}" --csv reports/mamamia_nnunet_lodo_hd95_results.csv --markdown reports/mamamia_nnunet_lodo_hd95_results.md
 EOF
 )
     collect_job="$(sbatch --parsable \

@@ -7,14 +7,22 @@ elif [[ -n "${SLURM_SUBMIT_DIR:-}" && -d "${SLURM_SUBMIT_DIR}/scripts/mamamia_nn
     REPO_ROOT="$(cd -P "${SLURM_SUBMIT_DIR}" && pwd -P)"
 else
     SCRIPT_DIR_FALLBACK="$(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
-    REPO_ROOT="$(cd -P "${SCRIPT_DIR_FALLBACK}/../.." && pwd -P)"
+    if [[ "$(basename "$(dirname "${SCRIPT_DIR_FALLBACK}")")" == "nnunet" && "$(basename "$(dirname "$(dirname "${SCRIPT_DIR_FALLBACK}")")")" == "external" ]]; then
+        REPO_ROOT="$(cd -P "${SCRIPT_DIR_FALLBACK}/../../.." && pwd -P)"
+    else
+        REPO_ROOT="$(cd -P "${SCRIPT_DIR_FALLBACK}/../.." && pwd -P)"
+    fi
 fi
-SCRIPT_DIR="${REPO_ROOT}/scripts/mamamia_nnunet"
+if [[ -d "${REPO_ROOT}/external/nnunet/mamamia_nnunet" ]]; then
+    SCRIPT_DIR="${REPO_ROOT}/external/nnunet/mamamia_nnunet"
+else
+    SCRIPT_DIR="${REPO_ROOT}/scripts/mamamia_nnunet"
+fi
 
 JOBS_FILE="${JOBS_FILE:-${REPO_ROOT}/logs/mamamia/bestlast_reeval_jobs_20260623_corrected.tsv}"
 POLL_SECONDS="${POLL_SECONDS:-300}"
-PROJECT_ROOT="${PROJECT_ROOT:-.}"
-CONDA_ENV="${CONDA_ENV:-data_selection_3_10}"
+PROJECT_ROOT="${PROJECT_ROOT:-${REPO_ROOT}}"
+CONDA_ENV="${CONDA_ENV:-mamamia_nnunet}"
 SBATCH_CONSTRAINT="${SBATCH_CONSTRAINT:-a100|a40|l40s|v100}"
 
 if [[ ! -f "${JOBS_FILE}" ]]; then

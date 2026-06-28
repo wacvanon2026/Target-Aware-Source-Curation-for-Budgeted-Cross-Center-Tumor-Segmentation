@@ -23,11 +23,11 @@ FORBIDDEN_TEXT = tuple(
         "rui" + "shan",
     ]
 )
-SKIP_DIRS = {"data", "datasets", "raw", "preprocessed", "results", "outputs", "runs", "logs", "checkpoints", "models", "weights", "wandb", ".git", "__pycache__", ".pytest_cache", ".mypy_cache"}
+SKIP_DIRS = {"data", "datasets", "raw", "preprocessed", "results", "outputs", "runs", "logs", "checkpoints", "weights", "wandb", ".git", "__pycache__", ".pytest_cache", ".mypy_cache"}
 TEXT_SUFFIXES = {".py", ".sh", ".md", ".txt", ".yaml", ".yml", ".json", ".toml"}
 COMMENT_SUFFIXES = {".py", ".sh", ".yaml", ".yml", ".json", ".toml"}
 BLOCKED_BINARY_SUFFIXES = {".pt", ".pth", ".ckpt", ".pkl", ".npy", ".npz", ".nii", ".gz", ".zip", ".tar", ".tgz", ".7z", ".h5", ".hdf5"}
-TRACKED_BLOCKED_DIRS = {"data", "datasets", "raw", "preprocessed", "results", "outputs", "runs", "logs", "checkpoints", "models", "weights", "wandb", "__pycache__", ".pytest_cache", ".mypy_cache"}
+TRACKED_BLOCKED_DIRS = {"data", "datasets", "raw", "preprocessed", "results", "outputs", "runs", "logs", "checkpoints", "weights", "wandb", "__pycache__", ".pytest_cache", ".mypy_cache"}
 
 
 @dataclass(frozen=True)

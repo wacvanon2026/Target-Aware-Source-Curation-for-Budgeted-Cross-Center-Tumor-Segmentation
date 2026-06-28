@@ -15,7 +15,13 @@ class EfficientViT_Seg(nn.Module):
 
         # === 1️⃣ 加载 ADE20K pretrained EfficientViT ===
         # print(f"🧠 Loading EfficientViT backbone: {backbone} (pretrained={pretrained})")
-        self.model = create_efficientvit_seg_model(f"efficientvit-seg-l1-ade20k", pretrained=pretrained)
+        try:
+            self.model = create_efficientvit_seg_model(f"efficientvit-seg-l1-ade20k", pretrained=pretrained)
+        except FileNotFoundError:
+            if not pretrained:
+                raise
+            print("EfficientViT pretrained checkpoint not found; initializing segmentation backbone without pretrained weights.")
+            self.model = create_efficientvit_seg_model(f"efficientvit-seg-l1-ade20k", pretrained=False)
 
         # === 2️⃣ 替换输入层（自适应通道数） ===
         old_conv = self.model.backbone.stages[0].op_list[0].conv  # 第一层 Conv2d

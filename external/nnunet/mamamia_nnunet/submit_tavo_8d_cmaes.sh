@@ -14,7 +14,6 @@ TARGETS=(NACT ISPY1 DUKE ISPY2)
 BUDGETS=(50 150 250)
 RUN_TAG="${RUN_TAG:-$(date +%Y%m%d_%H%M%S)}"
 
-# Defaults mirror the BraTS 8D CMA scripts. Override for smoke/debug runs.
 GENERATIONS="${GENERATIONS:-12}"
 POPSIZE="${POPSIZE:-20}"
 MU="${MU:-10}"

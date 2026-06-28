@@ -55,7 +55,7 @@
         "diversity": "external/efficientvit/scripts/run_diversity.py"
       },
       "tavo_methods": ["tavo_8d_cmaes"],
-      "tavo_entrypoints": ["python -m tavo_release.cli tavo-command --dataset brats"],
+      "tavo_entrypoints": ["python -m tavo_release.cli tavo-command --dataset brats", "external/efficientvit/scripts/search_brats_tavo_8d.py"],
       "domain_adaptation_methods": ["dann", "mmd", "advent", "seasa"],
       "domain_adaptation_entrypoints": {
         "dann": "external/efficientvit/scripts/train_seg_da.py",
@@ -84,7 +84,7 @@
         "kmeans": "external/efficientvit/scripts_cls/select_target_2shot.py"
       },
       "tavo_methods": ["tavo_8d_cmaes"],
-      "tavo_entrypoints": ["python -m tavo_release.cli tavo-command --dataset officehome"],
+      "tavo_entrypoints": ["python -m tavo_release.cli tavo-command --dataset officehome", "external/efficientvit/scripts_cls/search_officehome_tavo_8d.py"],
       "domain_adaptation_methods": ["dann", "mmd", "coral", "cdan"],
       "domain_adaptation_entrypoints": {
         "dann": "external/efficientvit/scripts_cls/train_cls_da.py",

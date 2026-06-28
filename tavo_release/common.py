@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 import csv
 import json
 import os
@@ -10,25 +9,12 @@ import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Sequence
-
-
-FORBIDDEN_TEXT = tuple(
-    [
-        "/" + "project" + "2" + "/",
-        "/" + "scratch",
-        "/" + "home" + "1" + "/",
-        "/" + "home" + "/",
-        "mi" + "aot",
-        "xi" + "wenc",
-        "rui" + "shan",
-    ]
-)
-SKIP_DIRS = {"data", "datasets", "raw", "preprocessed", "results", "outputs", "runs", "logs", "checkpoints", "weights", "wandb", ".git", "__pycache__", ".pytest_cache", ".mypy_cache"}
-TEXT_SUFFIXES = {".py", ".sh", ".md", ".txt", ".yaml", ".yml", ".json", ".toml"}
-COMMENT_SUFFIXES = {".py", ".sh", ".yaml", ".yml", ".json", ".toml"}
-BLOCKED_BINARY_SUFFIXES = {".pt", ".pth", ".ckpt", ".pkl", ".npy", ".npz", ".nii", ".gz", ".zip", ".tar", ".tgz", ".7z", ".h5", ".hdf5"}
-TRACKED_BLOCKED_DIRS = {"data", "datasets", "raw", "preprocessed", "results", "outputs", "runs", "logs", "checkpoints", "weights", "wandb", "__pycache__", ".pytest_cache", ".mypy_cache"}
-
+FORBIDDEN_TEXT = tuple(['/' + 'project' + '2' + '/', '/' + 'scratch', '/' + 'home' + '1' + '/', '/' + 'home' + '/', 'mi' + 'aot', 'xi' + 'wenc', 'rui' + 'shan'])
+SKIP_DIRS = {'data', 'datasets', 'raw', 'preprocessed', 'results', 'outputs', 'runs', 'logs', 'checkpoints', 'weights', 'wandb', '.git', '__pycache__', '.pytest_cache', '.mypy_cache'}
+TEXT_SUFFIXES = {'.py', '.sh', '.md', '.txt', '.yaml', '.yml', '.json', '.toml'}
+COMMENT_SUFFIXES = {'.py', '.sh', '.yaml', '.yml', '.json', '.toml'}
+BLOCKED_BINARY_SUFFIXES = {'.pt', '.pth', '.ckpt', '.pkl', '.npy', '.npz', '.nii', '.gz', '.zip', '.tar', '.tgz', '.7z', '.h5', '.hdf5'}
+TRACKED_BLOCKED_DIRS = {'data', 'datasets', 'raw', 'preprocessed', 'results', 'outputs', 'runs', 'logs', 'checkpoints', 'weights', 'wandb', '__pycache__', '.pytest_cache', '.mypy_cache'}
 
 @dataclass(frozen=True)
 class Workspace:
@@ -38,10 +24,9 @@ class Workspace:
     splits: Path
 
     @classmethod
-    def from_root(cls, root: str | Path) -> "Workspace":
+    def from_root(cls, root: str | Path) -> 'Workspace':
         base = Path(root).expanduser().resolve()
-        return cls(base, base / "data", base / "outputs", base / "splits")
-
+        return cls(base, base / 'data', base / 'outputs', base / 'splits')
 
 def read_lines(path: str | Path) -> list[str]:
     p = Path(path)
@@ -49,24 +34,20 @@ def read_lines(path: str | Path) -> list[str]:
         return []
     return [line.strip() for line in p.read_text().splitlines() if line.strip()]
 
-
 def write_lines(path: str | Path, values: Iterable[str]) -> Path:
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text("\n".join(str(v) for v in values) + "\n")
+    p.write_text('\n'.join((str(v) for v in values)) + '\n')
     return p
-
 
 def read_json(path: str | Path):
     return json.loads(Path(path).read_text())
 
-
 def write_json(path: str | Path, value) -> Path:
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n")
+    p.write_text(json.dumps(value, indent=2, sort_keys=True) + '\n')
     return p
-
 
 def write_csv(path: str | Path, rows: Sequence[dict]) -> Path:
     p = Path(path)
@@ -76,32 +57,28 @@ def write_csv(path: str | Path, rows: Sequence[dict]) -> Path:
         for key in row:
             if key not in keys:
                 keys.append(key)
-    with p.open("w", newline="") as f:
+    with p.open('w', newline='') as f:
         writer = csv.DictWriter(f, fieldnames=keys)
         writer.writeheader()
         writer.writerows(rows)
     return p
 
-
 def list_images(root: str | Path) -> list[Path]:
     base = Path(root)
-    suffixes = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
-    return sorted(p for p in base.rglob("*") if p.is_file() and p.suffix.lower() in suffixes)
-
+    suffixes = {'.jpg', '.jpeg', '.png', '.bmp', '.webp'}
+    return sorted((p for p in base.rglob('*') if p.is_file() and p.suffix.lower() in suffixes))
 
 def list_cases(root: str | Path) -> list[str]:
     base = Path(root)
     if not base.exists():
         return []
-    return sorted(p.name for p in base.iterdir() if p.is_dir())
-
+    return sorted((p.name for p in base.iterdir() if p.is_dir()))
 
 def stable_shuffle(values: Sequence[str], seed: int) -> list[str]:
     out = list(values)
     rng = random.Random(seed)
     rng.shuffle(out)
     return out
-
 
 def ratio_split(values: Sequence[str], ratios: Sequence[int], seed: int) -> list[list[str]]:
     shuffled = stable_shuffle(values, seed)
@@ -120,7 +97,6 @@ def ratio_split(values: Sequence[str], ratios: Sequence[int], seed: int) -> list
     parts.append(shuffled[prev:])
     return parts
 
-
 def stratified_split(items: Sequence[tuple[str, str]], ratios: Sequence[int], seed: int) -> list[list[tuple[str, str]]]:
     by_label: dict[str, list[tuple[str, str]]] = {}
     for item in items:
@@ -129,16 +105,15 @@ def stratified_split(items: Sequence[tuple[str, str]], ratios: Sequence[int], se
     for label in sorted(by_label):
         subparts = ratio_split([x[0] for x in by_label[label]], ratios, seed)
         for idx, paths in enumerate(subparts):
-            parts[idx].extend((path, label) for path in paths)
+            parts[idx].extend(((path, label) for path in paths))
     return [sorted(part) for part in parts]
 
-
-def symlink_or_copy(src: str | Path, dst: str | Path, copy: bool = False) -> Path:
+def symlink_or_copy(src: str | Path, dst: str | Path, copy: bool=False) -> Path:
     source = Path(src).resolve()
     target = Path(dst)
     target.parent.mkdir(parents=True, exist_ok=True)
     if target.exists() or target.is_symlink():
-        if target.is_dir() and not target.is_symlink():
+        if target.is_dir() and (not target.is_symlink()):
             shutil.rmtree(target)
         else:
             target.unlink()
@@ -151,36 +126,32 @@ def symlink_or_copy(src: str | Path, dst: str | Path, copy: bool = False) -> Pat
         target.symlink_to(source, target_is_directory=source.is_dir())
     return target
 
-
-def download_file(url: str, dst: str | Path, overwrite: bool = False) -> Path:
+def download_file(url: str, dst: str | Path, overwrite: bool=False) -> Path:
     target = Path(dst)
     target.parent.mkdir(parents=True, exist_ok=True)
-    if target.exists() and not overwrite:
+    if target.exists() and (not overwrite):
         return target
-    tmp = target.with_suffix(target.suffix + ".tmp")
+    tmp = target.with_suffix(target.suffix + '.tmp')
     urllib.request.urlretrieve(url, tmp)
     tmp.replace(target)
     return target
 
-
-def run_command(cmd: Sequence[str], cwd: str | Path | None = None, dry_run: bool = False, env: dict[str, str] | None = None) -> int:
+def run_command(cmd: Sequence[str], cwd: str | Path | None=None, dry_run: bool=False, env: dict[str, str] | None=None) -> int:
     if dry_run:
-        print(" ".join(str(x) for x in cmd))
+        print(' '.join((str(x) for x in cmd)))
         return 0
     merged = os.environ.copy()
     if env:
         merged.update(env)
     return subprocess.run([str(x) for x in cmd], cwd=cwd, env=merged, check=True).returncode
 
-
 def skipped(path: Path, base: Path) -> bool:
-    return any(part in SKIP_DIRS for part in path.relative_to(base).parts[:-1])
+    return any((part in SKIP_DIRS for part in path.relative_to(base).parts[:-1]))
 
-
-def scannable_files(root: str | Path, suffixes: set[str] | None = None) -> list[Path]:
+def scannable_files(root: str | Path, suffixes: set[str] | None=None) -> list[Path]:
     base = Path(root)
     files = []
-    for path in base.rglob("*"):
+    for path in base.rglob('*'):
         if skipped(path, base):
             continue
         if not path.is_file():
@@ -190,13 +161,12 @@ def scannable_files(root: str | Path, suffixes: set[str] | None = None) -> list[
         files.append(path)
     return files
 
-
 def scan_for_forbidden_paths(root: str | Path) -> list[tuple[str, str]]:
     hits = []
     base = Path(root)
     for path in scannable_files(base, TEXT_SUFFIXES):
         try:
-            text = path.read_text(errors="ignore")
+            text = path.read_text(errors='ignore')
         except OSError:
             continue
         for needle in FORBIDDEN_TEXT:
@@ -204,33 +174,29 @@ def scan_for_forbidden_paths(root: str | Path) -> list[tuple[str, str]]:
                 hits.append((str(path.relative_to(base)), needle))
     return hits
 
-
 def forbidden_text_hits(path: str, text: str) -> list[tuple[str, str]]:
     return [(path, needle) for needle in FORBIDDEN_TEXT if needle in text]
-
 
 def decode_text_file(path: Path) -> str | None:
     try:
         data = path.read_bytes()
     except OSError:
         return None
-    if b"\0" in data:
+    if b'\x00' in data:
         return None
     try:
         return data.decode()
     except UnicodeDecodeError:
-        return data.decode(errors="ignore")
+        return data.decode(errors='ignore')
 
-
-def scan_for_large_or_binary(root: str | Path, max_bytes: int = 1_000_000) -> list[tuple[str, int]]:
+def scan_for_large_or_binary(root: str | Path, max_bytes: int=1000000) -> list[tuple[str, int]]:
     hits = []
     base = Path(root)
     for path in scannable_files(base):
         size = path.stat().st_size
-        if size > max_bytes or path.suffix.lower() in BLOCKED_BINARY_SUFFIXES or path.name.endswith(".nii.gz"):
+        if size > max_bytes or path.suffix.lower() in BLOCKED_BINARY_SUFFIXES or path.name.endswith('.nii.gz'):
             hits.append((str(path.relative_to(base)), size))
     return hits
-
 
 def scan_for_comment_syntax(root: str | Path) -> list[tuple[str, int, str]]:
     hits = []
@@ -238,83 +204,78 @@ def scan_for_comment_syntax(root: str | Path) -> list[tuple[str, int, str]]:
     doc_marker = '"' * 3
     for path in scannable_files(base, COMMENT_SUFFIXES):
         try:
-            lines = path.read_text(errors="ignore").splitlines()
+            lines = path.read_text(errors='ignore').splitlines()
         except OSError:
             continue
         for idx, line in enumerate(lines, start=1):
             stripped = line.strip()
-            if stripped.startswith("#") or doc_marker in line:
+            if stripped.startswith('#') or doc_marker in line:
                 hits.append((str(path.relative_to(base)), idx, stripped[:120]))
     return hits
 
-
 def scan_git_authors(root: str | Path) -> list[tuple[str, str, str]]:
     base = Path(root)
-    proc = subprocess.run(["git", "log", "--format=%H%x09%an%x09%ae", "--all"], cwd=base, text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False)
+    proc = subprocess.run(['git', 'log', '--format=%H%x09%an%x09%ae', '--all'], cwd=base, text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False)
     if proc.returncode != 0:
         return []
     hits = []
     for line in proc.stdout.splitlines():
-        commit, name, email = line.split("\t", 2)
-        if name != "Anonymous Authors" or email != "anonymous@example.com":
+        commit, name, email = line.split('\t', 2)
+        if name != 'Anonymous Authors' or email != 'anonymous@example.com':
             hits.append((commit, name, email))
     return hits
 
-
 def scan_git_messages(root: str | Path) -> list[tuple[str, str]]:
     base = Path(root)
-    proc = subprocess.run(["git", "log", "--format=%H%x00%B%x00ENDCOMMIT"], cwd=base, text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False)
+    proc = subprocess.run(['git', 'log', '--format=%H%x00%B%x00ENDCOMMIT'], cwd=base, text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False)
     if proc.returncode != 0:
         return []
     hits = []
-    for block in proc.stdout.split("\0ENDCOMMIT"):
+    for block in proc.stdout.split('\x00ENDCOMMIT'):
         if not block.strip():
             continue
-        parts = block.split("\0", 1)
+        parts = block.split('\x00', 1)
         if len(parts) != 2:
             continue
         commit, message = parts
-        for _, needle in forbidden_text_hits("git", message):
+        for _, needle in forbidden_text_hits('git', message):
             hits.append((commit.strip(), needle))
     return hits
 
-
 def tracked_files(root: str | Path) -> list[Path]:
     base = Path(root)
-    proc = subprocess.run(["git", "ls-files", "-z"], cwd=base, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False)
+    proc = subprocess.run(['git', 'ls-files', '-z'], cwd=base, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False)
     if proc.returncode != 0:
         return []
-    return [base / item.decode() for item in proc.stdout.split(b"\0") if item]
+    return [base / item.decode() for item in proc.stdout.split(b'\x00') if item]
 
-
-def tracked_file_issues(root: str | Path, path: str | Path, max_bytes: int = 1_000_000) -> list[str]:
+def tracked_file_issues(root: str | Path, path: str | Path, max_bytes: int=1000000) -> list[str]:
     base = Path(root)
     p = Path(path)
     rel = p.relative_to(base) if p.is_absolute() else p
     full = base / rel
     issues = []
-    if any(part in TRACKED_BLOCKED_DIRS for part in rel.parts[:-1]):
-        issues.append("runtime_directory")
+    if any((part in TRACKED_BLOCKED_DIRS for part in rel.parts[:-1])):
+        issues.append('runtime_directory')
     suffix = full.suffix.lower()
-    if suffix in BLOCKED_BINARY_SUFFIXES or full.name.endswith(".nii.gz"):
-        issues.append("artifact_suffix")
+    if suffix in BLOCKED_BINARY_SUFFIXES or full.name.endswith('.nii.gz'):
+        issues.append('artifact_suffix')
     try:
-        if full.exists() and not full.is_symlink() and full.stat().st_size > max_bytes:
-            issues.append("large_file")
+        if full.exists() and (not full.is_symlink()) and (full.stat().st_size > max_bytes):
+            issues.append('large_file')
     except OSError:
-        issues.append("missing_tracked_file")
+        issues.append('missing_tracked_file')
     if full.is_symlink():
         try:
             target = os.readlink(full)
         except OSError:
-            issues.append("broken_symlink")
+            issues.append('broken_symlink')
             return issues
-        if Path(target).is_absolute() or any(needle in target for needle in FORBIDDEN_TEXT):
-            issues.append("unsafe_symlink")
+        if Path(target).is_absolute() or any((needle in target for needle in FORBIDDEN_TEXT)):
+            issues.append('unsafe_symlink')
     return issues
 
-
-def scan_tracked_release_files(root: str | Path, max_bytes: int = 1_000_000) -> list[tuple[str, str]]:
+def scan_tracked_release_files(root: str | Path, max_bytes: int=1000000) -> list[tuple[str, str]]:
     hits = []
     base = Path(root)
     for path in tracked_files(base):
@@ -322,7 +283,6 @@ def scan_tracked_release_files(root: str | Path, max_bytes: int = 1_000_000) -> 
         for issue in tracked_file_issues(base, path, max_bytes=max_bytes):
             hits.append((rel, issue))
     return hits
-
 
 def scan_tracked_forbidden_text(root: str | Path) -> list[tuple[str, str]]:
     hits = []
@@ -334,14 +294,6 @@ def scan_tracked_forbidden_text(root: str | Path) -> list[tuple[str, str]]:
         hits.extend(forbidden_text_hits(str(path.relative_to(base)), text))
     return hits
 
-
 def release_audit(root: str | Path) -> dict:
     base = Path(root)
-    return {
-        "forbidden_hits": scan_for_forbidden_paths(base),
-        "tracked_forbidden_hits": scan_tracked_forbidden_text(base),
-        "large_files": scan_for_large_or_binary(base),
-        "git_author_hits": scan_git_authors(base),
-        "git_message_hits": scan_git_messages(base),
-        "tracked_file_hits": scan_tracked_release_files(base),
-    }
+    return {'forbidden_hits': scan_for_forbidden_paths(base), 'tracked_forbidden_hits': scan_tracked_forbidden_text(base), 'large_files': scan_for_large_or_binary(base), 'git_author_hits': scan_git_authors(base), 'git_message_hits': scan_git_messages(base), 'tracked_file_hits': scan_tracked_release_files(base)}

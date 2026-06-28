@@ -1,15 +1,4 @@
 #!/bin/bash
-#SBATCH --job-name=mamamia_nnunet
-#SBATCH --output=logs/mamamia/%x_%j.out
-#SBATCH --error=logs/mamamia/%x_%j.out
-#SBATCH --partition=gpu
-#SBATCH --nodes=1
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task=8
-#SBATCH --gpus-per-task=1
-#SBATCH --constraint="a100|a40|l40s|v100"
-#SBATCH --mem=64G
-#SBATCH --time=12:00:00
 
 set -Eeuo pipefail
 

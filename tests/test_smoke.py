@@ -27,6 +27,17 @@ def test_pathway_audit():
     assert result["ok"], result["errors"]
 
 
+def test_pathway_entrypoints_exist():
+    data = json.loads(Path("configs/pathways.json").read_text())
+    missing = []
+    for spec in data["pathways"]:
+        for field in ("selection_entrypoints", "domain_adaptation_entrypoints"):
+            for method, entrypoint in spec.get(field, {}).items():
+                if entrypoint.endswith(".py") and not Path(entrypoint).exists():
+                    missing.append((spec["dataset"], field, method, entrypoint))
+    assert missing == []
+
+
 def test_pathway_audit_rejects_extra_methods(tmp_path: Path):
     data = json.loads(Path("configs/pathways.json").read_text())
     data["pathways"][0]["selection_methods"].append("stale_method")

@@ -145,9 +145,12 @@ def materialize_nnunet_raw(dataset_root: str | Path, split_root: str | Path, out
 
 def nnunet_commands(dataset: str | int, trainer: str = "nnUNetTrainer", fold: int = 0, configuration: str = "2d") -> dict[str, list[str]]:
     ds = str(dataset)
+    train_command = ["nnUNetv2_train", ds, configuration, str(fold), "-tr", trainer]
+    if trainer.startswith("nnUNetTrainerTAVO"):
+        train_command = ["python", "-m", "tavo_release.mamamia_nnunet_train", ds, configuration, str(fold), "-tr", trainer]
     return {
         "plan": ["nnUNetv2_plan_and_preprocess", "-d", ds, "-c", configuration, "--verify_dataset_integrity"],
-        "train": ["nnUNetv2_train", ds, configuration, str(fold), "-tr", trainer],
+        "train": train_command,
         "predict": ["nnUNetv2_predict", "-d", ds, "-c", configuration, "-f", str(fold), "-tr", trainer],
     }
 

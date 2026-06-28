@@ -110,7 +110,7 @@ def build_train_command(config: str | Path) -> list[str]:
         dataset_id = str(cfg["nnunet_dataset_id"])
         configuration = str(cfg.get("configuration", "2d"))
         fold = str(cfg.get("fold", 0))
-        return ["nnUNetv2_train", dataset_id, configuration, fold, "-tr", impl["trainer"]]
+        return ["python", "-m", "tavo_release.mamamia_nnunet_train", dataset_id, configuration, fold, "-tr", impl["trainer"]]
     if dataset == "brats":
         return ["env", "PYTHONPATH=external/efficientvit", "python", impl["entrypoint"], "--config", str(Path(config))]
     if dataset == "officehome":

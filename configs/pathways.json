@@ -76,24 +76,12 @@
       "config": "configs/officehome_resnet.json",
       "targets": ["Art", "Clipart", "Product", "RealWorld"],
       "budgets": [50, 150, 250],
-      "selection_methods": ["random", "rds", "less", "orient", "craig", "gradmatch", "kmeans", "kcenter", "diversity", "coreset", "metric_coreset", "dp4tl", "bilevel", "proto_repair", "transport_smi"],
+      "selection_methods": ["random", "rds", "less", "orient", "craig", "gradmatch", "kmeans", "kcenter", "diversity"],
       "score_file_methods": ["rds", "less", "orient", "craig", "gradmatch", "kmeans", "kcenter", "diversity"],
       "selection_entrypoints": {
         "orient": "external/efficientvit/scripts_cls/gen_source_orient_subset.py",
         "craig": "external/efficientvit/scripts_cls/select_target_2shot.py",
-        "kmeans": "external/efficientvit/scripts_cls/select_target_2shot.py",
-        "coreset": "external/efficientvit/scripts_cls/select_target_2shot.py",
-        "metric_coreset": "external/efficientvit/scripts_cls/select_target_2shot.py",
-        "dp4tl": "external/efficientvit/scripts_cls/select_dp4tl_cls.py",
-        "bilevel": "external/efficientvit/scripts_cls/select_bilevel_2shot.py",
-        "proto_repair": "external/efficientvit/scripts_cls/select_proto_repair_2shot.py",
-        "transport_smi": "external/efficientvit/scripts_cls/select_transport_smi_2shot.py"
-      },
-      "selection_config_patterns": {
-        "craig": "configs_cls/officehome/TARGET/source_SOURCE_target_craig_2shot.yaml",
-        "kmeans": "configs_cls/officehome/TARGET/source_SOURCE_target_kmeans_2shot.yaml",
-        "coreset": "configs_cls/officehome/TARGET/source_SOURCE_target_coreset_2shot.yaml",
-        "metric_coreset": "configs_cls/officehome/TARGET/source_SOURCE_target_metric_coreset_2shot.yaml"
+        "kmeans": "external/efficientvit/scripts_cls/select_target_2shot.py"
       },
       "tavo_methods": ["tavo_8d_cmaes"],
       "tavo_entrypoints": ["python -m tavo_release.cli tavo-command --dataset officehome"],

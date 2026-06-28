@@ -1,0 +1,15 @@
+batchgenerators==0.25.1
+blosc2==4.0.0
+cma==4.4.1
+efficientvit==0.0.0
+matplotlib==3.10.8
+numpy==2.4.2
+pandas==3.0.1
+PyYAML==6.0.3
+scikit_learn==1.8.0
+scipy==1.17.1
+seaborn==0.13.2
+simpleitk==2.5.2
+submodlib_py==0.0.3
+torch==2.9.0
+tqdm==4.67.1

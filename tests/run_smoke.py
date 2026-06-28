@@ -28,16 +28,16 @@ with TemporaryDirectory(prefix="tavo_release_test_") as tmp:
     for dataset, target in (("mamamia", "NACT"), ("brats", "C5"), ("officehome", "Art")):
         if search_command(dataset, target, 50).count("--score") != 8:
             raise SystemExit(f"{dataset} TAVO route is not 8D")
-    coreset = selection_route("officehome", "Art", "coreset", 50)
-    if coreset["route_type"] not in {"entrypoint", "config_pattern"}:
-        raise SystemExit("OfficeHome coreset route is missing")
+    kmeans = selection_route("officehome", "Art", "kmeans", 50)
+    if kmeans["route_type"] != "score_file":
+        raise SystemExit("OfficeHome kmeans score route is missing")
     inventory = route_inventory("all")
-    if len(inventory) != 423:
+    if len(inventory) != 351:
         raise SystemExit("selection route inventory count changed")
     routed = route_audit()
     if not routed["ok"]:
         raise SystemExit(routed)
-    expected_counts = {"selection": 423, "tavo": 39, "domain_adaptation": 156}
+    expected_counts = {"selection": 351, "tavo": 39, "domain_adaptation": 156}
     for family, expected in expected_counts.items():
         if routed["families"][family]["count"] != expected:
             raise SystemExit(routed)

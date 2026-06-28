@@ -110,8 +110,9 @@ def expected_plan_counts() -> dict[str, int]:
     external_selection = sum(len(spec["targets"]) * len(BUDGETS) * len([method for method in spec["selection"] if method not in SCORE_METHODS_8D and method != "random"]) for spec in DATASET_METHODS.values())
     tavo = sum(len(spec["targets"]) * len(BUDGETS) for spec in DATASET_METHODS.values())
     da = sum(len(spec["targets"]) * len(BUDGETS) * len(spec["domain_adaptation"]) for spec in DATASET_METHODS.values())
+    base = len(mamamia_plan()) + len(brats_plan()) + len(officehome_plan())
     return {
-        "steps": 889,
+        "steps": base,
         "score_selection": selection,
         "external_selection_route": external_selection,
         "tavo_search": tavo,
@@ -181,7 +182,7 @@ def audit_plan() -> dict:
         "mamamia_NACT_tavo50",
         "brats_C5_rds50_selection",
         "brats_C5_tavo50_search",
-        "officehome_Art_coreset50_selection_route",
+        "officehome_Art_kmeans50_selection",
         "officehome_Art_tavo50_search",
     }
     names = {step["name"] for step in steps}

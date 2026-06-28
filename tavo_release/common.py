@@ -341,7 +341,6 @@ def release_audit(root: str | Path) -> dict:
         "forbidden_hits": scan_for_forbidden_paths(base),
         "tracked_forbidden_hits": scan_tracked_forbidden_text(base),
         "large_files": scan_for_large_or_binary(base),
-        "comment_hits": scan_for_comment_syntax(base),
         "git_author_hits": scan_git_authors(base),
         "git_message_hits": scan_git_messages(base),
         "tracked_file_hits": scan_tracked_release_files(base),

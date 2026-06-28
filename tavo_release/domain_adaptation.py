@@ -89,7 +89,11 @@ def build_config(dataset: str, method: str, split_dir: str | Path, output_dir: s
 
 def implementation(dataset: str, method: str) -> dict[str, str]:
     if dataset == "mamamia":
-        return {"backend": "nnunet", "trainer": MAMAMIA_TRAINERS[method], "source_module": "tavo_release.mamamia_nnunet_trainers"}
+        return {
+            "backend": "nnunet",
+            "trainer": MAMAMIA_TRAINERS[method],
+            "source_module": "external/nnunet/mamamia_nnunet/nnUNetTrainerTAVODomainAlignment.py",
+        }
     if dataset == "brats":
         return {"backend": "efficientvit", "entrypoint": BRATS_ENTRYPOINTS[method]}
     if dataset == "officehome":

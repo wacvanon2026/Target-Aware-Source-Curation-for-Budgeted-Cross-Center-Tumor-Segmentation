@@ -29,7 +29,7 @@ PYTHONPATH=. python -m tavo_release.cli pathway-audit --pathways configs/pathway
 PYTHONPATH=. python -m tavo_release.cli route-audit --pathways configs/pathways.json
 ```
 
-The pathway registry is `configs/pathways.json`. It records the three experiment tracks, the eight 8D TAVO source valuation criteria, the dataset-specific TAVO entrypoints, and the domain-adaptation entrypoints. The `external/efficientvit` and `external/nnunet` directories are runtime integration points for code trees supplied by the runner; they are not data or checkpoint folders.
+The pathway registry is `configs/pathways.json`. It records the three experiment tracks, the eight 8D TAVO source valuation criteria, the dataset-specific TAVO entrypoints, and the domain-adaptation entrypoints. The `external/efficientvit` and `external/nnunet` directories contain the released training integrations used by those pathways; they are source-code folders, not data or checkpoint folders.
 
 Generic archive download:
 
@@ -59,6 +59,8 @@ Generate a domain-adaptation config and command:
 PYTHONPATH=. python -m tavo_release.cli da-config --dataset mamamia --method dann --split-dir splits/mamamia_lodo_seed42/NACT --output-dir outputs/mamamia/NACT/dann50 --budget 50 --output configs/generated/mamamia_NACT_dann_50.json --target NACT --nnunet-dataset-id 9000
 PYTHONPATH=. python -m tavo_release.cli da-command --config configs/generated/mamamia_NACT_dann_50.json
 ```
+
+The generated MAMA-MIA DA command launches `python -m tavo_release.mamamia_nnunet_train`, which installs the released TAVO nnU-Net trainer files into the active Python environment before calling `nnUNetv2_train`. Use a writable environment or copy the files in `external/nnunet/mamamia_nnunet` into the installed `nnunetv2/training/nnUNetTrainer` package manually.
 
 Collect result summaries:
 
@@ -94,7 +96,7 @@ Run CMA-ES score fusion:
 PYTHONPATH=. python -m tavo_release.cli search --score rds=scores/brats/C5/rds.json --score less=scores/brats/C5/less.json --score orient=scores/brats/C5/orient.json --score craig=scores/brats/C5/craig.json --score gradmatch=scores/brats/C5/gradmatch.json --score kmeans=scores/brats/C5/kmeans.json --score kcenter=scores/brats/C5/kcenter.json --score diversity=scores/brats/C5/diversity.json --budget 50 --output-dir outputs/brats/C5/tavo50
 ```
 
-BraTS selection and DA scripts are integrated through the EfficientViT pathway entries in `configs/pathways.json`.
+BraTS selection, TAVO, and DA scripts are integrated through the EfficientViT pathway entries in `configs/pathways.json`. EfficientViT pretrained weights are not stored in git; if the expected checkpoint is absent, the released segmentation model initializes without pretrained weights.
 
 ```bash
 PYTHONPATH=. python -m tavo_release.cli da-config --dataset brats --method mmd --split-dir splits/brats/C5 --output-dir outputs/brats/C5/mmd50 --budget 50 --output configs/generated/brats_C5_mmd_50.json --target C5

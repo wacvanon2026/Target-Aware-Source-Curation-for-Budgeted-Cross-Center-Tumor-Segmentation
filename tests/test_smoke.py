@@ -1,4 +1,5 @@
 import json
+import shlex
 from pathlib import Path
 
 from tavo_release.common import forbidden_text_hits, release_audit, scan_git_messages, scan_tracked_forbidden_text, scan_tracked_release_files, tracked_file_issues
@@ -35,6 +36,10 @@ def test_pathway_entrypoints_exist():
             for method, entrypoint in spec.get(field, {}).items():
                 if entrypoint.endswith(".py") and not Path(entrypoint).exists():
                     missing.append((spec["dataset"], field, method, entrypoint))
+        for entrypoint in spec.get("tavo_entrypoints", []):
+            for token in shlex.split(entrypoint):
+                if token.endswith(".py") and not Path(token).exists():
+                    missing.append((spec["dataset"], "tavo_entrypoints", "tavo", token))
     assert missing == []
 
 

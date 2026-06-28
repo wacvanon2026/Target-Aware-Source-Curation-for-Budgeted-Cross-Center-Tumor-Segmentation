@@ -124,5 +124,7 @@ def test_da_config_preserves_target(tmp_path: Path):
     assert "--target" in build_train_command(cfg)
     assert "C5" in build_train_command(cfg)
     cfg = build_config("officehome", "coral", tmp_path, tmp_path / "out", 50, tmp_path / "office_da.json", target="Art")
-    assert "--target" in build_train_command(cfg)
-    assert "Art" in build_train_command(cfg)
+    command = build_train_command(cfg)
+    assert command[:3] == ["env", "PYTHONPATH=external/efficientvit", "python"]
+    assert "external/efficientvit/scripts_cls/train_cls_da.py" in command
+    assert "--config" in command

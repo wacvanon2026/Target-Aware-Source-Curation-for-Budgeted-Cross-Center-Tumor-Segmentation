@@ -74,7 +74,7 @@
       "task": "image_classification",
       "backend": "classification",
       "config": "configs/officehome_resnet.json",
-      "targets": ["Art", "Clipart", "Product", "Real_World"],
+      "targets": ["Art", "Clipart", "Product", "RealWorld"],
       "budgets": [50, 150, 250],
       "selection_methods": ["random", "rds", "less", "orient", "craig", "gradmatch", "kmeans", "kcenter", "diversity", "coreset", "metric_coreset", "dp4tl", "bilevel", "proto_repair", "transport_smi"],
       "score_file_methods": ["rds", "less", "orient", "craig", "gradmatch", "kmeans", "kcenter", "diversity"],
@@ -99,10 +99,10 @@
       "tavo_entrypoints": ["python -m tavo_release.cli tavo-command --dataset officehome"],
       "domain_adaptation_methods": ["dann", "mmd", "coral", "cdan"],
       "domain_adaptation_entrypoints": {
-        "dann": "external/efficientvit/scripts_cls/train_cls.py",
-        "mmd": "external/efficientvit/scripts_cls/train_cls.py",
-        "coral": "external/efficientvit/scripts_cls/train_cls.py",
-        "cdan": "external/efficientvit/scripts_cls/train_cls.py"
+        "dann": "external/efficientvit/scripts_cls/train_cls_da.py",
+        "mmd": "external/efficientvit/scripts_cls/train_cls_da.py",
+        "coral": "external/efficientvit/scripts_cls/train_cls_da.py",
+        "cdan": "external/efficientvit/scripts_cls/train_cls_da.py"
       },
       "commands": {
         "split": "python -m tavo_release.cli split --dataset officehome --data-root data/officehome --output-root splits/officehome --target Art",

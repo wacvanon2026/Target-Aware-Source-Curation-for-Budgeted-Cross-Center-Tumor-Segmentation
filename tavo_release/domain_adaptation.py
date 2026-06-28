@@ -20,10 +20,10 @@ BRATS_ENTRYPOINTS = {
     "seasa": "external/efficientvit/scripts/run_seasa.py",
 }
 OFFICEHOME_ENTRYPOINTS = {
-    "dann": "external/efficientvit/scripts_cls/train_cls.py",
-    "mmd": "external/efficientvit/scripts_cls/train_cls.py",
-    "coral": "external/efficientvit/scripts_cls/train_cls.py",
-    "cdan": "external/efficientvit/scripts_cls/train_cls.py",
+    "dann": "external/efficientvit/scripts_cls/train_cls_da.py",
+    "mmd": "external/efficientvit/scripts_cls/train_cls_da.py",
+    "coral": "external/efficientvit/scripts_cls/train_cls_da.py",
+    "cdan": "external/efficientvit/scripts_cls/train_cls_da.py",
 }
 
 
@@ -41,8 +41,36 @@ def build_config(dataset: str, method: str, split_dir: str | Path, output_dir: s
             "target_test": str(Path(split_dir) / "target_test.txt"),
         },
         "implementation": implementation(dataset, method),
-        "training": {"output_dir": str(Path(output_dir)), "save_checkpoints": True},
+        "training": {"seed": 0, "epochs": 30, "output_dir": str(Path(output_dir)), "save_checkpoints": True},
     }
+    if dataset == "officehome":
+        cfg.update({
+            "experiment": {"name": f"officehome_{target or 'target'}_{method}_{budget}", "save_dir": str(Path(output_dir))},
+            "data": {
+                "num_classes": 65,
+                "source_train": cfg["splits"]["source_train"],
+                "source_val": cfg["splits"]["target_val"],
+                "target_selected": cfg["splits"]["target_train"],
+                "target_test": cfg["splits"]["target_test"],
+                "batch_size": 64,
+                "num_workers": 8,
+            },
+            "model": {"backbone": "resnet50", "pretrained": True, "num_classes": 65},
+            "optimizer": {"lr": 3e-4, "weight_decay": 1e-4},
+            "scheduler": {"T_max": 30},
+            "da": {
+                "method": method,
+                "lambda_max": 0.1,
+                "target_ce_weight": 1.0,
+                "steps_per_epoch": "auto",
+                "domain_hidden_dim": 1024,
+                "domain_dropout": 0.5,
+                "kernel_multipliers": [0.25, 0.5, 1.0, 2.0, 4.0],
+                "fixed_sigma": "auto",
+                "entropy_conditioning": True,
+                "random_dim": 1024,
+            },
+        })
     if target is not None:
         cfg["target"] = target
     if nnunet_dataset_id is not None:
@@ -77,7 +105,7 @@ def build_train_command(config: str | Path) -> list[str]:
     if dataset == "brats":
         return ["python", impl["entrypoint"], "--target", target, "--budget", budget]
     if dataset == "officehome":
-        return ["python", impl["entrypoint"], "--method", method, "--target", target, "--budget_per_class", str(cfg.get("budget_per_class", 2))]
+        return ["env", "PYTHONPATH=external/efficientvit", "python", impl["entrypoint"], "--config", str(Path(config))]
     raise ValueError(dataset)
 
 

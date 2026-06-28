@@ -29,7 +29,7 @@ DATASET_METHODS = {
         "selection": ("random", *SCORE_METHODS_8D, "coreset", "metric_coreset", "dp4tl", "bilevel", "proto_repair", "transport_smi"),
         "tavo": ("tavo_8d_cmaes",),
         "domain_adaptation": ("dann", "mmd", "coral", "cdan"),
-        "targets": ("Art", "Clipart", "Product", "Real_World"),
+        "targets": ("Art", "Clipart", "Product", "RealWorld"),
     },
 }
 

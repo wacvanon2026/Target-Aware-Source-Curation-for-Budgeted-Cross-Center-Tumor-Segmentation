@@ -6,7 +6,7 @@ from pathlib import Path
 from .common import download_file, list_images, stable_shuffle, stratified_split, write_json, write_lines
 
 
-DOMAINS = ("Art", "Clipart", "Product", "Real_World")
+DOMAINS = ("Art", "Clipart", "Product", "RealWorld")
 
 
 def download_officehome(url: str, output_dir: str | Path, filename: str = "officehome.zip", overwrite: bool = False) -> Path:

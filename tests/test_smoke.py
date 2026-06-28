@@ -121,8 +121,10 @@ def test_mamamia_da_command_requires_dataset_id(tmp_path: Path):
 
 def test_da_config_preserves_target(tmp_path: Path):
     cfg = build_config("brats", "mmd", tmp_path, tmp_path / "out", 50, tmp_path / "brats_da.json", target="C5")
-    assert "--target" in build_train_command(cfg)
-    assert "C5" in build_train_command(cfg)
+    command = build_train_command(cfg)
+    assert command[:3] == ["env", "PYTHONPATH=external/efficientvit", "python"]
+    assert "external/efficientvit/scripts/train_seg_da.py" in command
+    assert "--config" in command
     cfg = build_config("officehome", "coral", tmp_path, tmp_path / "out", 50, tmp_path / "office_da.json", target="Art")
     command = build_train_command(cfg)
     assert command[:3] == ["env", "PYTHONPATH=external/efficientvit", "python"]

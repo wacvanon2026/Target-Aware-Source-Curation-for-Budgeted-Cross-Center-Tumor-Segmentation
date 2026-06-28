@@ -58,10 +58,10 @@
       "tavo_entrypoints": ["python -m tavo_release.cli tavo-command --dataset brats", "external/efficientvit/scripts/search_multi/cma_TARGET_8d_5T.py", "external/efficientvit/scripts/search_multi/cma_TARGET_8d_10T.py"],
       "domain_adaptation_methods": ["dann", "mmd", "advent", "seasa"],
       "domain_adaptation_entrypoints": {
-        "dann": "external/efficientvit/scripts/run_dann.py",
-        "mmd": "external/efficientvit/scripts/run_mmd.py",
-        "advent": "external/efficientvit/scripts/run_advent.py",
-        "seasa": "external/efficientvit/scripts/run_seasa.py"
+        "dann": "external/efficientvit/scripts/train_seg_da.py",
+        "mmd": "external/efficientvit/scripts/train_seg_da.py",
+        "advent": "external/efficientvit/scripts/train_seg_da.py",
+        "seasa": "external/efficientvit/scripts/train_seg_da.py"
       },
       "commands": {
         "split": "python -m tavo_release.cli split --dataset brats --data-root data/brats --output-root splits/brats --target C5",

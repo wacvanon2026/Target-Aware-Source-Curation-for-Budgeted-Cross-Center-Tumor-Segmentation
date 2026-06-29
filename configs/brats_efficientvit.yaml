@@ -3,7 +3,7 @@ data:
   root: data/brats
   train_subjects: splits/brats/source_train.txt
   val_subjects: splits/brats/target_val.txt
-  img_size: 224
+  img_size: 512
 model:
   name: efficientvit
   in_channels: 4
@@ -11,6 +11,6 @@ model:
 trainer:
   max_iters: 500
 training:
-  batch_size: 16
+  batch_size: 4
   lr: 0.0001
   save_dir: outputs/brats/run

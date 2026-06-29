@@ -6,6 +6,6 @@
   "nnunet_preprocessed": "data/nnUNet_preprocessed",
   "nnunet_results": "outputs/nnUNet_results",
   "targets": ["NACT", "ISPY1", "DUKE", "ISPY2"],
-  "budgets": [50, 150, 250],
-  "methods": ["random", "rds", "gradmatch", "less", "orient", "diversity", "kmeans", "craig", "kcenter", "tavo"]
+  "budgets": [50, 150, 250, 500],
+  "methods": ["random", "rds", "less", "orient", "gradmatch", "craig", "kmeans", "kcenter", "diversity", "tavo"]
 }

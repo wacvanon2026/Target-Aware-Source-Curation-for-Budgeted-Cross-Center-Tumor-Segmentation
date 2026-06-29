@@ -140,10 +140,8 @@ PYTHONPATH=. python -m tavo_release.cli da-command --config configs/generated/of
 Run:
 
 ```bash
-bash scripts/smoke.sh
-bash scripts/check_release.sh
 PYTHONPATH=. python -m tavo_release.cli repro-smoke
-PYTHONPATH=. python tests/run_smoke.py
+PYTHONPATH=. python -m tavo_release.cli check --root .
 ```
 
 The release folder ignores datasets, checkpoints, model weights, and generated outputs.

@@ -8,7 +8,9 @@
     "target_test": "splits/officehome/Art/target_test.txt"
   },
   "model": {
-    "backbone": "resnet50"
+    "backbone": "resnet50",
+    "pretrained": true,
+    "num_classes": 65
   },
   "training": {
     "epochs": 30,

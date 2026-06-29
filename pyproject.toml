@@ -17,6 +17,3 @@ torch = [
   "torch",
   "torchvision"
 ]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]

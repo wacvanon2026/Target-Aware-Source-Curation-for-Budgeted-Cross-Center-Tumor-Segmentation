@@ -10,12 +10,12 @@ def kmeans_full_ranking(X, max_rank=500, normalize=True, seed=0, eps=1e-12):
     X = X.astype(np.float64)
     if normalize:
         X = X / (np.linalg.norm(X, axis=1, keepdims=True) + eps)
-    print(f'🔹 Running KMeans clustering (K={K})...')
+    print(f' Running KMeans clustering (K={K})...')
     kmeans = KMeans(n_clusters=K, random_state=seed, n_init=10, max_iter=300)
     kmeans.fit(X)
     centers = kmeans.cluster_centers_
     labels = kmeans.labels_
-    print('🔹 Selecting cluster representatives...')
+    print(' Selecting cluster representatives...')
     selected = []
     cluster_sizes = []
     for c in range(K):
@@ -39,10 +39,10 @@ def main():
     parser.add_argument('--normalize', action='store_true')
     parser.add_argument('--seed', type=int, default=0)
     args = parser.parse_args()
-    embed_root = f'././data/splits_{args.target}_rds'
-    out_root = f'././data/splits_{args.target}_kmeans'
+    embed_root = f'external/efficientvit/data/splits_{args.target}_rds'
+    out_root = f'external/efficientvit/data/splits_{args.target}_kmeans'
     os.makedirs(out_root, exist_ok=True)
-    print(f'\n📂 Loading embeddings from: {embed_root}')
+    print(f'\n Loading embeddings from: {embed_root}')
     src_vecs = np.load(os.path.join(embed_root, 'src_subject_vecs.npy'))
     with open(os.path.join(embed_root, 'src_subject_ids.txt')) as f:
         src_ids = [line.strip() for line in f]
@@ -57,7 +57,7 @@ def main():
         score[idx] = 1.0 - rank / (N - 1)
     score_dict = {src_ids[i]: float(score[i]) for i in range(len(src_ids))}
     np.save(os.path.join(out_root, 'kmeans_score_dict.npy'), score_dict, allow_pickle=True)
-    print('💾 Saved kmeans_score_dict.npy')
+    print(' Saved kmeans_score_dict.npy')
     ordered_ids = [src_ids[i] for i in selected_order]
     with open(os.path.join(out_root, 'kmeans_sorted_ids.txt'), 'w') as f:
         f.write('\n'.join(ordered_ids))
@@ -69,7 +69,7 @@ def main():
         os.makedirs(subset_dir, exist_ok=True)
         with open(os.path.join(subset_dir, 'train_subjects.txt'), 'w') as f:
             f.write('\n'.join(subset_ids))
-        print(f'✅ Saved kmeans_{k}T ({budget})')
-    print('\n🎉 KMeans completed.')
+        print(f'OK Saved kmeans_{k}T ({budget})')
+    print('\n KMeans completed.')
 if __name__ == '__main__':
     main()

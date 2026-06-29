@@ -15,15 +15,15 @@ from models.efficientvit_seg.losses import DiceCELoss
 
 def load_datasets(data_cfg, prebuilt=None):
     if prebuilt is not None:
-        print('⚡ Using prebuilt datasets')
+        print(' Using prebuilt datasets')
         return (prebuilt['train'], prebuilt['val'])
     train_datasets = []
     for dom in data_cfg['domains']:
         ds = BraTSSliceDataset(root_dir=dom['path'], split=dom['split'], img_size=data_cfg['img_size'], split_txt_dir=dom.get('split_txt'), skip_empty=data_cfg.get('skip_empty_train' if dom['split'] == 'train' else 'skip_empty_val', False))
         train_datasets.append(ds)
-        print(f"✅ Loaded train domain: {dom['name']} ({len(ds)} slices)")
+        print(f"OK Loaded train domain: {dom['name']} ({len(ds)} slices)")
     train_dataset = ConcatDataset(train_datasets)
-    print(f'📊 Total train dataset: {len(train_dataset)} slices')
+    print(f' Total train dataset: {len(train_dataset)} slices')
     val_cfg = data_cfg['val']
     val_dataset = BraTSSliceDataset(root_dir=val_cfg['path'], split=val_cfg['split'], img_size=data_cfg['img_size'], split_txt_dir=val_cfg.get('split_txt'), skip_empty=data_cfg.get('skip_empty_val', False))
     return (train_dataset, val_dataset)
@@ -72,16 +72,16 @@ def eval_short(model, loader, criterion, device):
 
 def run_short_training_with_dataset(cfg: dict, seeds: List[int], train_dataset, val_dataset) -> Dict[str, Any]:
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(f'🚀 Using device: {device}')
-    print(f'🎲 Running short-eval with seeds = {seeds}')
+    print(f' Using device: {device}')
+    print(f' Running short-eval with seeds = {seeds}')
     max_iters = cfg['trainer']['max_iters']
     save_dir = cfg['training']['save_dir']
     os.makedirs(save_dir, exist_ok=True)
-    print(f'⚡ Short evaluation target iters = {max_iters}')
+    print(f' Short evaluation target iters = {max_iters}')
     all_train_losses = []
     all_val_losses = []
     for seed in seeds:
-        print(f'\n🌱 Seed {seed} -------------------------------')
+        print(f'\n Seed {seed} -------------------------------')
         torch.manual_seed(seed)
         torch.cuda.manual_seed_all(seed)
         np.random.seed(seed)
@@ -91,7 +91,7 @@ def run_short_training_with_dataset(cfg: dict, seeds: List[int], train_dataset, 
         if 'warmup' in cfg and 'checkpoint' in cfg['warmup']:
             ckpt_path = cfg['warmup']['checkpoint']
             assert os.path.exists(ckpt_path), f'Checkpoint not found: {ckpt_path}'
-            print(f'🔥 Resuming from checkpoint: {ckpt_path}')
+            print(f' Resuming from checkpoint: {ckpt_path}')
             ckpt = torch.load(ckpt_path, map_location=device)
             start_iter = ckpt.get('global_iter', 0)
         mcfg = cfg['model']
@@ -105,8 +105,8 @@ def run_short_training_with_dataset(cfg: dict, seeds: List[int], train_dataset, 
         scaler = torch.cuda.amp.GradScaler()
         train_losses, global_it = train_short(model, train_loader, optimizer, criterion, device, scaler, start_iter=start_iter, max_iters=max_iters)
         val_losses = eval_short(model, val_loader, criterion, device)
-        print(f'📉 Train loss: {train_losses[0]:.4f} → {train_losses[-1]:.4f}')
-        print(f'📉 Val   loss: {val_losses[0]:.4f} → {val_losses[-1]:.4f}')
+        print(f' Train loss: {train_losses[0]:.4f} -> {train_losses[-1]:.4f}')
+        print(f' Val   loss: {val_losses[0]:.4f} -> {val_losses[-1]:.4f}')
         torch.save({'model_state': model.state_dict(), 'optimizer_state': optimizer.state_dict(), 'scaler_state': scaler.state_dict(), 'global_iter': global_it}, os.path.join(save_dir, 'latest.pt'))
         all_train_losses.append(train_losses)
         all_val_losses.append(val_losses)
@@ -114,13 +114,13 @@ def run_short_training_with_dataset(cfg: dict, seeds: List[int], train_dataset, 
     np.save(os.path.join(save_dir, 'val_losses_seeds.npy'), np.stack(all_val_losses))
     np.save(os.path.join(save_dir, 'train_losses_mean.npy'), np.mean(np.stack(all_train_losses), axis=0))
     np.save(os.path.join(save_dir, 'val_losses_mean.npy'), np.mean(np.stack(all_val_losses), axis=0))
-    print('\n✅ Multi-seed short evaluation finished.')
+    print('\nOK Multi-seed short evaluation finished.')
     return {'train_losses_seeds': all_train_losses, 'val_losses_seeds': all_val_losses}
 
 def main(config_path, seeds):
     with open(config_path, 'r') as f:
         cfg = yaml.safe_load(f)
-    print('📁 Loading datasets...')
+    print(' Loading datasets...')
     train_dataset, val_dataset = load_datasets(cfg['data'])
     run_short_training_with_dataset(cfg=cfg, seeds=seeds, train_dataset=train_dataset, val_dataset=val_dataset)
 if __name__ == '__main__':

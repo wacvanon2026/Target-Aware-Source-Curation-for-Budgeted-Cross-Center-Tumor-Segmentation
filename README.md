@@ -16,6 +16,8 @@ List the full released method matrix:
 PYTHONPATH=. python -m tavo_release.cli matrix
 ```
 
+The released matrix covers MAMA-MIA and BraTS segmentation budgets `50`, `150`, `250`, and `500`. OfficeHome uses class-balanced per-class budgets `1`, `3`, `5`, `8`, `15`, `25`, and `40`. MAMA-MIA targets are `NACT`, `ISPY1`, `DUKE`, and `ISPY2`; BraTS targets are `C4`, `C5`, `TCGA_LGG`, and `TCGA_GBM`; OfficeHome targets are `Art`, `Clipart`, `Product`, and `RealWorld`.
+
 Write a combined execution plan:
 
 ```bash
@@ -74,6 +76,8 @@ Write a full MAMA-MIA plan:
 PYTHONPATH=. python -m tavo_release.cli plan --dataset mamamia --output-dir outputs/plans
 ```
 
+MAMA-MIA includes random, RDS, LESS, ORIENT, CRAIG, GradMatch, KMeans, KCenter, Diversity, TAVO-8D CMA-ES, and the DANN, MMD, ADVENT, and SE-ASA nnU-Net trainer integrations.
+
 ## BraTS
 
 Build target-domain splits:
@@ -97,6 +101,8 @@ PYTHONPATH=. python -m tavo_release.cli search --score rds=scores/brats/C5/rds.j
 ```
 
 BraTS selection, TAVO, and DA scripts are integrated through the EfficientViT pathway entries in `configs/pathways.json`. EfficientViT pretrained weights are not stored in git; if the expected checkpoint is absent, the released segmentation model initializes without pretrained weights.
+
+The restored EfficientViT search implementation includes the C4 repeated-target CMA scripts under `external/efficientvit/scripts/search_C4_multi`, the C5/TCGA CMA scripts under `external/efficientvit/scripts/search_multi`, and BraTS ablation utilities under `external/efficientvit/scripts/revise_ablation`. BraTS DA is implemented by `external/efficientvit/scripts/train_seg_da.py` with DANN, DAN/MMD, ADVENT, and SE-ASA modes.
 
 ```bash
 PYTHONPATH=. python -m tavo_release.cli da-config --dataset brats --method mmd --split-dir splits/brats/C5 --output-dir outputs/brats/C5/mmd50 --budget 50 --output configs/generated/brats_C5_mmd_50.json --target C5
@@ -122,9 +128,11 @@ PYTHONPATH=. python -m tavo_release.cli split --dataset officehome --data-root d
 
 OfficeHome classification uses the classification pathway entries in `configs/pathways.json`.
 
+OfficeHome source selection uses its classification-specific 8D criteria: KMeans, KCenter, FacilityLocation, CRAIG, TargetMMD, TargetGradMatch, GLISTER, and ORIENT. The revised source-selection and TAVO scripts live in `external/efficientvit/scripts_cls_revise`; DA uses DANN, MMD, CORAL, and CDAN through `external/efficientvit/scripts_cls/train_cls_da.py`.
+
 ```bash
-PYTHONPATH=. python -m tavo_release.cli da-config --dataset officehome --method coral --split-dir splits/officehome/Art --output-dir outputs/officehome/Art/coral50 --budget 50 --output configs/generated/officehome_Art_coral_50.json --target Art
-PYTHONPATH=. python -m tavo_release.cli da-command --config configs/generated/officehome_Art_coral_50.json
+PYTHONPATH=. python -m tavo_release.cli da-config --dataset officehome --method coral --split-dir splits/officehome/Art --output-dir outputs/officehome/Art/coral15 --budget 15 --output configs/generated/officehome_Art_coral_15.json --target Art
+PYTHONPATH=. python -m tavo_release.cli da-command --config configs/generated/officehome_Art_coral_15.json
 ```
 
 ## Release Checks

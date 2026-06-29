@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 from .common import list_cases, ratio_split, read_lines, stable_shuffle, symlink_or_copy, write_json, write_lines
 DOMAINS = {'NACT': 'NACT_', 'ISPY1': 'ISPY1_', 'DUKE': 'DUKE_', 'ISPY2': 'ISPY2_'}
-BUDGETS = (50, 150, 250)
+BUDGETS = (50, 150, 250, 500)
 METHODS = ('rds', 'gradmatch', 'less', 'orient', 'diversity', 'kmeans', 'craig', 'kcenter', 'tavo')
 
 def domain_for_case(case_id: str) -> str:
@@ -63,7 +63,7 @@ def dataset_id(target: str, experiment: str, budget: int | None=None, base_id: i
     if budget is None:
         raise ValueError('budget is required')
     method_offset = {'random': 4, 'rds': 10, 'gradmatch': 13, 'less': 16, 'orient': 19, 'diversity': 22, 'kmeans': 25, 'craig': 28, 'kcenter': 31, 'tavo': 34}
-    budget_offset = {50: 0, 150: 1, 250: 2}
+    budget_offset = {50: 0, 150: 1, 250: 2, 500: 3}
     return base_id + domain_offset + method_offset[experiment] + budget_offset[budget]
 
 def parse_experiment_ref(ref: str) -> tuple[str, str, int | None]:

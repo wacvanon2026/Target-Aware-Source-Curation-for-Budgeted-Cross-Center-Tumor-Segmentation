@@ -11,12 +11,12 @@ def craig_full_ranking(src_vecs, max_rank, normalize=True, eps=1e-12):
     X = src_vecs.astype(np.float64)
     if normalize:
         X = X / (np.linalg.norm(X, axis=1, keepdims=True) + eps)
-    print('🔹 Computing cosine similarity matrix...')
+    print(' Computing cosine similarity matrix...')
     sim = cosine_similarity(X)
     sim = np.maximum(sim, 0.0).astype(np.float64)
-    print('🔹 Building FacilityLocationFunction...')
+    print(' Building FacilityLocationFunction...')
     fl = FacilityLocationFunction(n=Ns, mode='dense', sijs=sim, separate_rep=False)
-    print(f'🚀 Running LazyGreedy selection (max_rank={max_rank})')
+    print(f' Running LazyGreedy selection (max_rank={max_rank})')
     result = fl.maximize(budget=max_rank, optimizer='LazyGreedy', stopIfNegativeGain=False, show_progress=True)
     selected = []
     gains = []
@@ -37,10 +37,10 @@ def main():
     parser.add_argument('--max_rank', type=int, default=750)
     parser.add_argument('--normalize', action='store_true')
     args = parser.parse_args()
-    embed_root = f'././results/orient_embeddings_{args.target}'
-    out_root = f'././data/splits_{args.target}_craig'
+    embed_root = f'external/efficientvit/results/orient_embeddings_{args.target}'
+    out_root = f'external/efficientvit/data/splits_{args.target}_craig'
     os.makedirs(out_root, exist_ok=True)
-    print(f'\n📂 Loading embeddings from: {embed_root}')
+    print(f'\n Loading embeddings from: {embed_root}')
     src_vecs = np.load(os.path.join(embed_root, 'src_case_vecs.npy'))
     with open(os.path.join(embed_root, 'src_case_ids.txt')) as f:
         src_ids = [line.strip() for line in f]
@@ -52,11 +52,11 @@ def main():
     score_dict = {src_ids[i]: float(score[i]) for i in range(len(src_ids))}
     score_path = os.path.join(out_root, 'craig_score_dict.npy')
     np.save(score_path, score_dict, allow_pickle=True)
-    print(f'💾 Saved craig_score_dict.npy → {score_path}')
+    print(f' Saved craig_score_dict.npy -> {score_path}')
     ordered_ids = [src_ids[i] for i in selected_order]
     with open(os.path.join(out_root, 'craig_sorted_ids.txt'), 'w') as f:
         f.write('\n'.join(ordered_ids))
-    print('💾 Saved greedy order.')
+    print(' Saved greedy order.')
     budgets_T = [1, 5, 10, 15]
     for k in budgets_T:
         budget = k * args.T
@@ -65,7 +65,7 @@ def main():
         os.makedirs(subset_dir, exist_ok=True)
         with open(os.path.join(subset_dir, 'train_subjects.txt'), 'w') as f:
             f.write('\n'.join(subset_ids))
-        print(f'✅ Saved craig_{k}T ({budget})')
-    print('\n🎉 CRAIG completed (marginal gain score).')
+        print(f'OK Saved craig_{k}T ({budget})')
+    print('\n CRAIG completed (marginal gain score).')
 if __name__ == '__main__':
     main()

@@ -17,11 +17,11 @@ class BraTSSliceDataset(Dataset):
             if os.path.exists(split_file):
                 with open(split_file, 'r') as f:
                     selected_subjects = [line.strip() for line in f if line.strip()]
-                print(f'✅ Loaded {len(selected_subjects)} subjects from {split_file}')
+                print(f'OK Loaded {len(selected_subjects)} subjects from {split_file}')
             else:
-                print(f'⚠️ Split file not found: {split_file}, loading all subjects.')
+                print(f'WARNING Split file not found: {split_file}, loading all subjects.')
         else:
-            print('⚠️ No split_txt_dir provided — loading all subjects.')
+            print('WARNING No split_txt_dir provided - loading all subjects.')
         self.image_dir = os.path.join(root_dir, 'imagesTr')
         self.label_dir = os.path.join(root_dir, 'labelsTr')
         image_files = sorted([f for f in os.listdir(self.image_dir) if f.endswith('.npy')])
@@ -42,7 +42,7 @@ class BraTSSliceDataset(Dataset):
                 bg_skipped += 1
                 continue
             self.samples.append((img_f, lbl_f, subject_id, slice_idx))
-        print(f'📊 Loaded {len(self.samples)} slices from {root_dir} (skipped {bg_skipped} background-only, {non_selected} non-selected)')
+        print(f' Loaded {len(self.samples)} slices from {root_dir} (skipped {bg_skipped} background-only, {non_selected} non-selected)')
 
     def __len__(self):
         return len(self.samples)

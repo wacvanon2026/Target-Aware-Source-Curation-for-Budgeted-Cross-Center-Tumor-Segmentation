@@ -16,27 +16,27 @@ def dice_3d(pred, gt):
     return 2 * inter / (pred.sum() + gt.sum() + 1e-08)
 
 def evaluate_2d_to_3d(config_path, checkpoint_path):
-    print('📄 Loading config:', config_path)
+    print(' Loading config:', config_path)
     with open(config_path, 'r') as f:
         cfg = yaml.safe_load(f)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print('🚀 Using device:', device)
+    print(' Using device:', device)
     model_cfg = cfg['model']
     model = EfficientViT_Seg(backbone=model_cfg['name'], in_channels=model_cfg['in_channels'], num_classes=model_cfg['num_classes'], pretrained=model_cfg.get('pretrained', False)).to(device)
-    print('📦 Loading checkpoint:', checkpoint_path)
+    print(' Loading checkpoint:', checkpoint_path)
     ckpt = torch.load(checkpoint_path, map_location=device)
     model.load_state_dict(ckpt['model_state'], strict=False)
     model.eval()
     data_cfg = cfg['data']['test']
     img_size = cfg['data']['img_size']
-    print('📂 Preparing test dataset...')
+    print(' Preparing test dataset...')
     dataset = BraTSSliceDataset(root_dir=data_cfg['path'], split=data_cfg['split'], img_size=img_size, split_txt_dir=data_cfg['split_txt'], skip_empty=False)
-    print('🔎 Grouping slices by subject...')
+    print(' Grouping slices by subject...')
     subject_to_slices = defaultdict(list)
     for i in range(len(dataset)):
         _, _, subject_id, slice_idx = dataset.samples[i]
         subject_to_slices[subject_id].append((i, slice_idx))
-    print(f'📊 Total subjects to evaluate: {len(subject_to_slices)}')
+    print(f' Total subjects to evaluate: {len(subject_to_slices)}')
     dice_ET = dice_TC = dice_WT = 0
     N = 0
     for subject_id, slice_list in tqdm(subject_to_slices.items(), desc='Evaluating subjects', ncols=100):
@@ -86,7 +86,7 @@ def run_evaluation_2d_to_3d(config_path, checkpoint_path, output_dir):
         f.write(f'Dice_TC: {dTC:.4f}\n')
         f.write(f'Dice_WT: {dWT:.4f}\n')
         f.write(f'Macro Avg: {macro_avg:.4f}\n')
-    print(f'📄 3D evaluation results saved to {out_file}')
+    print(f' 3D evaluation results saved to {out_file}')
     return (dET, dTC, dWT, macro_avg)
 if __name__ == '__main__':
     import argparse
@@ -94,6 +94,6 @@ if __name__ == '__main__':
     parser.add_argument('--config', type=str, required=True)
     parser.add_argument('--checkpoint', type=str, required=True)
     args = parser.parse_args()
-    print('🚀 Running 2D→3D evaluation...')
+    print(' Running 2D->3D evaluation...')
     evaluate_2d_to_3d(args.config, args.checkpoint)
-    print('🏁 Evaluation complete!')
+    print(' Evaluation complete!')

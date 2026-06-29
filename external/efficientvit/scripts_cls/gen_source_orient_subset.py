@@ -100,7 +100,7 @@ def compute_gradient_features(model, loader, device, theta_params, save_prefix=N
         np.save(save_prefix + '_grads.npy', grads)
         with open(save_prefix + '_names.txt', 'w') as f:
             f.write('\n'.join(names))
-        print(f'💾 Saved gradients → {save_prefix}_grads.npy')
+        print(f' Saved gradients -> {save_prefix}_grads.npy')
     return (grads, names)
 
 def aggregate_to_instance_level(grads, names, save_prefix=None):
@@ -110,29 +110,29 @@ def aggregate_to_instance_level(grads, names, save_prefix=None):
         np.save(save_prefix + '_vecs.npy', vecs)
         with open(save_prefix + '_ids.txt', 'w') as f:
             f.write('\n'.join(ids))
-        print(f'💾 Saved embeddings → {save_prefix}_vecs.npy')
+        print(f' Saved embeddings -> {save_prefix}_vecs.npy')
     return (ids, vecs)
 
 def build_or_load_K(src_vecs, src_cache_root):
     K_path = os.path.join(src_cache_root, 'src_K.npy')
     if os.path.exists(K_path):
-        print('⚡ Loading cached SOURCE-SOURCE K matrix...')
+        print(' Loading cached SOURCE-SOURCE K matrix...')
         return np.load(K_path)
-    print('🧮 Computing SOURCE-SOURCE K matrix...')
+    print(' Computing SOURCE-SOURCE K matrix...')
     K = np.maximum(cosine_similarity(src_vecs, src_vecs), 0).astype(np.float32)
     np.save(K_path, K)
-    print(f'💾 Saved K → {K_path}')
+    print(f' Saved K -> {K_path}')
     return K
 
 def build_or_load_Q(src_vecs, tgt_vecs, tgt_cache_root):
     Q_path = os.path.join(tgt_cache_root, 'src_tgt_Q.npy')
     if os.path.exists(Q_path):
-        print('⚡ Loading cached SOURCE-TARGET Q matrix...')
+        print(' Loading cached SOURCE-TARGET Q matrix...')
         return np.load(Q_path)
-    print('🧮 Computing SOURCE-TARGET Q matrix...')
+    print(' Computing SOURCE-TARGET Q matrix...')
     Q = np.maximum(cosine_similarity(src_vecs, tgt_vecs), 0).astype(np.float32)
     np.save(Q_path, Q)
-    print(f'💾 Saved Q → {Q_path}')
+    print(f' Saved Q -> {Q_path}')
     return Q
 
 def orient_full_greedy_with_gain_from_KQ(K, Q, budget, eta=1.0):
@@ -168,7 +168,7 @@ def main():
     target_domain = detect_domain(args.target_list)
     target_name = os.path.basename(args.target_list).replace('.txt', '')
     print('\n==============================')
-    print('🚀 ORIENT SOURCE SELECTION')
+    print(' ORIENT SOURCE SELECTION')
     print('==============================')
     print('Source list:', args.source_list)
     print('Target list:', args.target_list)
@@ -182,7 +182,7 @@ def main():
     os.makedirs(tgt_cache_root, exist_ok=True)
     output_root = os.path.join('data_cls', 'splits_subset', 'office31', source_domain)
     os.makedirs(output_root, exist_ok=True)
-    print('\n🚀 Loading source-only warmup checkpoint...')
+    print('\n Loading source-only warmup checkpoint...')
     model = ResNet50Classifier(num_classes=31, pretrained=False).to(device)
     state = torch.load(args.warmup_ckpt, map_location='cpu')
     sd = state['model_state']
@@ -198,12 +198,12 @@ def main():
     transform = build_transform()
     src_dataset = OfficeDataset(args.source_list, transform=transform, return_path=True)
     tgt_dataset = OfficeDataset(args.target_list, transform=transform, class_to_idx=src_dataset.class_to_idx, return_path=True)
-    print('\n📁 Loading datasets...')
-    print(f'✅ Loaded source: {len(src_dataset)} samples')
+    print('\n Loading datasets...')
+    print(f'OK Loaded source: {len(src_dataset)} samples')
     print('Example source samples:')
     for i in range(min(5, len(src_dataset.samples))):
         print('   ', src_dataset.samples[i])
-    print(f'✅ Loaded target: {len(tgt_dataset)} samples')
+    print(f'OK Loaded target: {len(tgt_dataset)} samples')
     print('Example target samples:')
     for i in range(min(5, len(tgt_dataset.samples))):
         print('   ', tgt_dataset.samples[i])
@@ -211,9 +211,9 @@ def main():
     tgt_loader = DataLoader(tgt_dataset, batch_size=1, shuffle=False, num_workers=args.num_workers)
     src_cache = maybe_load_source_cache(src_cache_root)
     if src_cache is None:
-        print('\n🧠 Computing SOURCE gradients (first time only)...')
+        print('\n Computing SOURCE gradients (first time only)...')
         src_grads, src_names = compute_gradient_features(model, src_loader, device, theta_params, save_prefix=os.path.join(src_cache_root, 'src'))
-        print('\n📦 Aggregating SOURCE to instance-level...')
+        print('\n Aggregating SOURCE to instance-level...')
         src_ids, src_vecs = aggregate_to_instance_level(src_grads, src_names, save_prefix=os.path.join(src_cache_root, 'src'))
         np.save(os.path.join(src_cache_root, 'src_grads.npy'), src_grads)
         save_txt(os.path.join(src_cache_root, 'src_names.txt'), src_names)
@@ -222,18 +222,18 @@ def main():
         src_meta = {'source_list': args.source_list, 'warmup_ckpt': args.warmup_ckpt, 'num_source_instances': len(src_ids)}
         with open(os.path.join(src_cache_root, 'meta.json'), 'w') as f:
             json.dump(src_meta, f, indent=2)
-        print(f'✅ Saved SOURCE cache → {src_cache_root}')
+        print(f'OK Saved SOURCE cache -> {src_cache_root}')
     else:
-        print('⚡ Loading cached SOURCE gradients / vecs...')
+        print(' Loading cached SOURCE gradients / vecs...')
         src_grads = src_cache['src_grads']
         src_names = src_cache['src_names']
         src_vecs = src_cache['src_vecs']
         src_ids = src_cache['src_ids']
     tgt_cache = maybe_load_target_cache(tgt_cache_root)
     if tgt_cache is None:
-        print('\n🎯 Computing TARGET gradients...')
+        print('\n Computing TARGET gradients...')
         tgt_grads, tgt_names = compute_gradient_features(model, tgt_loader, device, theta_params, save_prefix=os.path.join(tgt_cache_root, 'tgt'))
-        print('\n📦 Aggregating TARGET to instance-level...')
+        print('\n Aggregating TARGET to instance-level...')
         tgt_ids, tgt_vecs = aggregate_to_instance_level(tgt_grads, tgt_names, save_prefix=os.path.join(tgt_cache_root, 'tgt'))
         np.save(os.path.join(tgt_cache_root, 'tgt_grads.npy'), tgt_grads)
         save_txt(os.path.join(tgt_cache_root, 'tgt_names.txt'), tgt_names)
@@ -242,9 +242,9 @@ def main():
         tgt_meta = {'target_list': args.target_list, 'warmup_ckpt': args.warmup_ckpt, 'num_target_instances': len(tgt_ids)}
         with open(os.path.join(tgt_cache_root, 'meta.json'), 'w') as f:
             json.dump(tgt_meta, f, indent=2)
-        print(f'✅ Saved TARGET cache → {tgt_cache_root}')
+        print(f'OK Saved TARGET cache -> {tgt_cache_root}')
     else:
-        print('⚡ Loading cached TARGET gradients / vecs...')
+        print(' Loading cached TARGET gradients / vecs...')
         tgt_grads = tgt_cache['tgt_grads']
         tgt_names = tgt_cache['tgt_names']
         tgt_vecs = tgt_cache['tgt_vecs']
@@ -254,7 +254,7 @@ def main():
     K = build_or_load_K(src_vecs, src_cache_root)
     Q = build_or_load_Q(src_vecs, tgt_vecs, tgt_cache_root)
     from collections import defaultdict
-    print('\n🔍 Checking SOURCE→TARGET similarity (Q) collapse...')
+    print('\n Checking SOURCE->TARGET similarity (Q) collapse...')
     cls_scores = defaultdict(list)
     for i, name in enumerate(src_names):
         cls = name.split('/')[-2]
@@ -264,7 +264,7 @@ def main():
     print('\nTop classes by mean Q similarity:')
     for k, v in list(cls_mean.items())[:10]:
         print(f'{k:20s} {v:.4f}')
-    print('\n🔍 Checking SOURCE-SOURCE similarity (K)...')
+    print('\n Checking SOURCE-SOURCE similarity (K)...')
     from collections import defaultdict
     src_cls = [n.split('/')[-2] for n in src_names]
     intra = defaultdict(list)
@@ -281,12 +281,12 @@ def main():
         if c in intra:
             print(f'{c:20s} intra-class K:', float(np.mean(intra[c])))
     budget = int(len(src_ids) * args.budget_ratio)
-    print('\n🧭 Running ORIENT greedy selection...')
+    print('\n Running ORIENT greedy selection...')
     ordered_idx, gains = orient_full_greedy_with_gain_from_KQ(K, Q, budget=budget, eta=args.eta)
     ordered_names = [src_names[i] for i in ordered_idx]
     from collections import Counter
     cls = [p.split('/')[-2] for p in ordered_names[:budget]]
-    print('\n📊 Selected class distribution:')
+    print('\n Selected class distribution:')
     print(Counter(cls))
     selected_names = []
     for p in ordered_names[:budget]:
@@ -294,7 +294,7 @@ def main():
         selected_names.append(f'{p} {label}')
     output_path = os.path.join(output_root, f'source_orient_given_{target_name}.txt')
     save_txt(output_path, selected_names)
-    print(f'✅ Saved ORIENT subset: {output_path} ({len(selected_names)} instances)')
+    print(f'OK Saved ORIENT subset: {output_path} ({len(selected_names)} instances)')
     with open(os.path.join(tgt_cache_root, 'orient_sorted_names.txt'), 'w') as f:
         f.write('\n'.join(ordered_names))
     np.save(os.path.join(tgt_cache_root, 'orient_gains.npy'), np.array(gains, dtype=np.float32))
@@ -307,6 +307,6 @@ def main():
     meta = {'source_list': args.source_list, 'target_list': args.target_list, 'warmup_ckpt': args.warmup_ckpt, 'budget_ratio': args.budget_ratio, 'budget': budget, 'eta': args.eta, 'src_cache_root': src_cache_root, 'tgt_cache_root': tgt_cache_root, 'num_source_instances': len(src_ids), 'num_target_instances': len(tgt_ids)}
     with open(os.path.join(tgt_cache_root, 'meta.json'), 'w') as f:
         json.dump(meta, f, indent=2)
-    print('\n🎉 ORIENT active-source selection completed.')
+    print('\n ORIENT active-source selection completed.')
 if __name__ == '__main__':
     main()

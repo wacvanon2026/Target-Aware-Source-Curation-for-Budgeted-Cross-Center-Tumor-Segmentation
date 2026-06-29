@@ -38,7 +38,7 @@ def main():
     ap.add_argument('--num_workers', type=int, default=4)
     ap.add_argument('--skip_empty', action='store_true', default=True)
     args = ap.parse_args()
-    base_dir = './data'
+    base_dir = 'external/efficientvit/data'
     src_split_dir = os.path.join(base_dir, f'splits_{args.target}_source')
     if args.target == 'UPENN':
         tgt_split_dir = os.path.join(base_dir, 'split_UPENN_T150')
@@ -53,13 +53,13 @@ def main():
     else:
         raise ValueError('Unknown target')
     output_root = os.path.join(base_dir, f'splits_{args.target}_orient')
-    embed_root = os.path.join('./results', f'orient_embeddings_{args.target}')
+    embed_root = os.path.join('external/efficientvit/results', f'orient_embeddings_{args.target}')
     os.makedirs(output_root, exist_ok=True)
     os.makedirs(embed_root, exist_ok=True)
     budgets_T = [1, 5, 10, 15]
     max_budget = max(budgets_T) * args.T
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print('🚀 Loading warmup checkpoint…')
+    print(' Loading warmup checkpoint...')
     model = EfficientViT_Seg(backbone='efficientvit_l1', in_channels=4, num_classes=4, pretrained=False).to(device)
     state = torch.load(args.warmup_ckpt, map_location=device)
     model.load_state_dict(state['model_state'], strict=False)
@@ -74,14 +74,14 @@ def main():
     tgt_dataset = ConcatDataset([tgt_train_dataset, tgt_val_dataset])
     src_loader = DataLoader(src_dataset, batch_size=1, shuffle=False, num_workers=args.num_workers)
     tgt_loader = DataLoader(tgt_dataset, batch_size=1, shuffle=False, num_workers=args.num_workers)
-    print('\n🧠 Computing SOURCE gradients …')
+    print('\n Computing SOURCE gradients ...')
     src_slice_g, src_slice_n = compute_gradient_features(model, src_loader, device, theta_params, save_prefix=os.path.join(embed_root, 'src'))
-    print('\n🎯 Computing TARGET gradients …')
+    print('\n Computing TARGET gradients ...')
     tgt_slice_g, tgt_slice_n = compute_gradient_features(model, tgt_loader, device, theta_params, save_prefix=os.path.join(embed_root, 'tgt'))
-    print('\n📦 Aggregating to subject-level …')
+    print('\n Aggregating to subject-level ...')
     src_subj_ids, src_subj_vecs = aggregate_to_subject_level(src_slice_g, src_slice_n, save_prefix=os.path.join(embed_root, 'src'))
     tgt_subj_ids, tgt_subj_vecs = aggregate_to_subject_level(tgt_slice_g, tgt_slice_n, save_prefix=os.path.join(embed_root, 'tgt'))
-    print('\n🧭 Running ORIENT greedy ordering (once)…')
+    print('\n Running ORIENT greedy ordering (once)...')
     ordered_idx, gains = orient_full_greedy_with_gain(src_subj_vecs, tgt_subj_vecs, budget=max_budget, eta=args.eta)
     ordered_ids = [src_subj_ids[i] for i in ordered_idx]
     for k in budgets_T:
@@ -91,7 +91,7 @@ def main():
         os.makedirs(out_dir, exist_ok=True)
         with open(os.path.join(out_dir, 'train_subjects.txt'), 'w') as f:
             f.write('\n'.join(selected_ids))
-        print(f'✅ Saved orient_{k}T ({budget})')
+        print(f'OK Saved orient_{k}T ({budget})')
     orient_score_dict = {sid: 0.0 for sid in src_subj_ids}
     L = len(ordered_idx)
     for r, idx in enumerate(ordered_idx):
@@ -100,6 +100,6 @@ def main():
     np.save(os.path.join(output_root, 'orient_score_dict.npy'), orient_score_dict, allow_pickle=True)
     with open(os.path.join(output_root, 'orient_sorted_ids.txt'), 'w') as f:
         f.write('\n'.join(ordered_ids))
-    print('\n🎉 ORIENT completed (single greedy version).')
+    print('\n ORIENT completed (single greedy version).')
 if __name__ == '__main__':
     main()

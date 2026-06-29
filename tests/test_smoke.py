@@ -78,8 +78,8 @@ def test_brats_split_accepts_explicit_lists(tmp_path: Path):
     assert result == {'target_train': 1, 'target_val': 1, 'target_test': 1, 'source_pool': 1}
 
 def test_tavo_routes_are_8d():
-    for dataset, target in (('mamamia', 'NACT'), ('brats', 'C5'), ('officehome', 'Art')):
-        cmd = search_command(dataset, target, 50)
+    for dataset, target, budget in (('mamamia', 'NACT', 50), ('brats', 'C5', 50), ('officehome', 'Art', 1)):
+        cmd = search_command(dataset, target, budget)
         assert cmd.count('--score') == 8
         assert cmd[0:4] == ['python', '-m', 'tavo_release.cli', 'search']
 
@@ -88,14 +88,14 @@ def test_selection_route_inventory_covers_release_methods():
     assert random_route['path'] == 'splits/mamamia_lodo_seed42/NACT/random/random_50.txt'
     rds_route = selection_route('mamamia', 'NACT', 'rds', 50)
     assert 'splits/mamamia_lodo_seed42/NACT/methods/rds_50.txt' in rds_route['command']
-    route = selection_route('officehome', 'Art', 'kmeans', 50)
+    route = selection_route('officehome', 'Art', 'kmeans', 1)
     assert route['route_type'] == 'score_file'
-    assert len(route_inventory('all')) == 351
+    assert len(route_inventory('all')) == 540
     audit = route_audit()
     assert audit['ok']
-    assert audit['families']['selection']['count'] == 351
-    assert audit['families']['tavo']['count'] == 39
-    assert audit['families']['domain_adaptation']['count'] == 156
+    assert audit['families']['selection']['count'] == 540
+    assert audit['families']['tavo']['count'] == 60
+    assert audit['families']['domain_adaptation']['count'] == 240
     da_routes = route_inventory('mamamia', family='domain_adaptation')
     assert all(('--nnunet-dataset-id' in route['config_command'] for route in da_routes))
     da_routes = route_inventory('brats', family='domain_adaptation')

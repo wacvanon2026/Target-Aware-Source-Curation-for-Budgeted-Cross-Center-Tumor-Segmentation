@@ -140,7 +140,7 @@ def make_toy_officehome(root: Path):
         for cls in ('a', 'b'):
             d = root / domain / cls
             d.mkdir(parents=True, exist_ok=True)
-            for idx in range(10):
+            for idx in range(45):
                 im = Image.new('RGB', (8, 8), (idx * 20, 40, 80))
                 im.save(d / f'{idx}.png')
 

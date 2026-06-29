@@ -1,7 +1,7 @@
 from __future__ import annotations
 from pathlib import Path
 from .domain_adaptation import implementation
-from .matrix import BUDGETS, DATASET_METHODS, SCORE_METHODS_8D
+from .matrix import DATASET_METHODS, dataset_budgets, dataset_score_methods
 from .pathways import REQUIRED_DATASETS, load_pathways
 from .tavo_routes import search_command, selection_command
 KEY_TO_PUBLIC = {value: key for key, value in REQUIRED_DATASETS.items()}
@@ -23,7 +23,7 @@ def selection_route(dataset: str, target: str, method: str, budget: int, source:
     expected = DATASET_METHODS[dataset]
     if target not in expected['targets']:
         raise ValueError(target)
-    if budget not in BUDGETS:
+    if budget not in dataset_budgets(dataset):
         raise ValueError(str(budget))
     if method not in expected['selection']:
         raise ValueError(method)
@@ -31,7 +31,7 @@ def selection_route(dataset: str, target: str, method: str, budget: int, source:
     if method == 'random':
         route.update({'route_type': 'split_file', 'path': f'{selection_split_dir(dataset, target)}/random/random_{budget}.txt'})
         return route
-    if method in SCORE_METHODS_8D:
+    if method in dataset_score_methods(dataset):
         out = f'{selection_split_dir(dataset, target)}/methods/{method}_{budget}.txt'
         route.update({'route_type': 'score_file', 'command': selection_command(dataset, target, method, budget, output=out)})
         return route
@@ -52,7 +52,7 @@ def selection_inventory(dataset: str='all', pathways_path: str | Path='configs/p
     routes = []
     for dataset_key, spec in datasets.items():
         for target in spec['targets']:
-            for budget in BUDGETS:
+            for budget in spec['budgets']:
                 for method in spec['selection']:
                     routes.append(selection_route(dataset_key, target, method, budget, pathways_path=pathways_path))
     return routes
@@ -64,14 +64,14 @@ def tavo_route(dataset: str, target: str, budget: int) -> dict:
     expected = DATASET_METHODS[dataset]
     if target not in expected['targets']:
         raise ValueError(target)
-    if budget not in BUDGETS:
+    if budget not in dataset_budgets(dataset):
         raise ValueError(str(budget))
     return {'dataset': dataset, 'target': target, 'method': 'tavo_8d_cmaes', 'budget': budget, 'route_type': 'score_fusion', 'command': search_command(dataset, target, budget)}
 
 def mamamia_da_dataset_id(target: str, method: str, budget: int) -> str:
     target_offset = DATASET_METHODS['mamamia']['targets'].index(target) * 100
     method_offset = DATASET_METHODS['mamamia']['domain_adaptation'].index(method) * 10
-    budget_offset = BUDGETS.index(budget)
+    budget_offset = dataset_budgets('mamamia').index(budget)
     return str(9000 + target_offset + method_offset + budget_offset)
 
 def split_dir(dataset: str, target: str) -> str:
@@ -88,7 +88,7 @@ def domain_adaptation_route(dataset: str, target: str, method: str, budget: int)
     expected = DATASET_METHODS[dataset]
     if target not in expected['targets']:
         raise ValueError(target)
-    if budget not in BUDGETS:
+    if budget not in dataset_budgets(dataset):
         raise ValueError(str(budget))
     if method not in expected['domain_adaptation']:
         raise ValueError(method)
@@ -108,7 +108,7 @@ def family_inventory(family: str, dataset: str='all', pathways_path: str | Path=
     routes = []
     for dataset_key, spec in datasets.items():
         for target in spec['targets']:
-            for budget in BUDGETS:
+            for budget in spec['budgets']:
                 if family == 'tavo':
                     routes.append(tavo_route(dataset_key, target, budget))
                 elif family == 'domain_adaptation':
@@ -122,7 +122,7 @@ def expected_keys(family: str) -> set[tuple]:
     keys = set()
     for dataset, spec in DATASET_METHODS.items():
         for target in spec['targets']:
-            for budget in BUDGETS:
+            for budget in spec['budgets']:
                 if family == 'selection':
                     for method in spec['selection']:
                         keys.add((dataset, target, method, budget))
@@ -154,16 +154,16 @@ def route_command_errors(family: str, route: dict) -> list[dict]:
         expected_path = f"{selection_split_dir(route['dataset'], route['target'])}/random/random_{route['budget']}.txt"
         if route.get('path') != expected_path:
             errors.append({**prefix, 'error': 'random_split_path'})
-    if family == 'selection' and route['method'] in SCORE_METHODS_8D:
+    if family == 'selection' and route['method'] in dataset_score_methods(route['dataset']):
         command = route.get('command', [])
-        if command.count('--score') != len(SCORE_METHODS_8D):
+        if command.count('--score') != len(dataset_score_methods(route['dataset'])):
             errors.append({**prefix, 'error': 'selection_score_count'})
         if '--weight' not in command:
             errors.append({**prefix, 'error': 'selection_missing_weight'})
         else:
             start = command.index('--weight') + 1
-            weights = command[start:start + len(SCORE_METHODS_8D)]
-            if len(weights) != len(SCORE_METHODS_8D) or weights.count('1') != 1:
+            weights = command[start:start + len(dataset_score_methods(route['dataset']))]
+            if len(weights) != len(dataset_score_methods(route['dataset'])) or weights.count('1') != 1:
                 errors.append({**prefix, 'error': 'selection_weight_shape'})
         if command_value(command, '--budget') != str(route['budget']):
             errors.append({**prefix, 'error': 'selection_budget'})
@@ -172,7 +172,7 @@ def route_command_errors(family: str, route: dict) -> list[dict]:
             errors.append({**prefix, 'error': 'selection_output'})
     if family == 'tavo':
         command = route.get('command', [])
-        if command.count('--score') != len(SCORE_METHODS_8D):
+        if command.count('--score') != len(dataset_score_methods(route['dataset'])):
             errors.append({**prefix, 'error': 'tavo_score_count'})
         if command_value(command, '--budget') != str(route['budget']):
             errors.append({**prefix, 'error': 'tavo_budget'})

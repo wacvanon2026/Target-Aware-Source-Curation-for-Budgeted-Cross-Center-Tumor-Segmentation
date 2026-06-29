@@ -17,7 +17,7 @@ def main():
     parser.add_argument('--warmup_ckpt', required=True)
     parser.add_argument('--T', type=int, required=True)
     args = parser.parse_args()
-    base_dir = './data'
+    base_dir = 'external/efficientvit/data'
     src_split_dir = os.path.join(base_dir, f'splits_{args.target}_source')
     if args.target == 'UPENN':
         tgt_split_dir = os.path.join(base_dir, 'split_UPENN_T150')
@@ -34,13 +34,13 @@ def main():
     output_root = os.path.join(base_dir, f'splits_{args.target}_rds')
     os.makedirs(output_root, exist_ok=True)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print('🚀 Loading warmup model...')
+    print(' Loading warmup model...')
     model = EfficientViT_Seg(backbone='efficientvit_l1', in_channels=4, num_classes=4, pretrained=False).to(device)
     state = torch.load(args.warmup_ckpt, map_location=device)
     model.load_state_dict(state['model_state'], strict=False)
     model.eval()
     model = FeatureExtractor(model).to(device)
-    print('✅ Warmup loaded.')
+    print('OK Warmup loaded.')
     img_size = 512
     batch_size = 4
     num_workers = 4
@@ -54,9 +54,9 @@ def main():
     tgt_dataset = ConcatDataset([tgt_train_dataset, tgt_val_dataset])
     src_loader = DataLoader(src_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
     tgt_loader = DataLoader(tgt_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
-    print('🧠 Extracting SOURCE embeddings...')
+    print(' Extracting SOURCE embeddings...')
     src_slice_emb, src_slice_names = extract_slice_embeddings(model, src_loader, device)
-    print('🎯 Extracting TARGET embeddings...')
+    print(' Extracting TARGET embeddings...')
     tgt_slice_emb, tgt_slice_names = extract_slice_embeddings(model, tgt_loader, device)
     np.save(os.path.join(output_root, 'src_slice_emb.npy'), src_slice_emb)
     np.save(os.path.join(output_root, 'tgt_slice_emb.npy'), tgt_slice_emb)
@@ -64,14 +64,14 @@ def main():
         f.write('\n'.join(src_slice_names))
     with open(os.path.join(output_root, 'tgt_slice_names.txt'), 'w') as f:
         f.write('\n'.join(tgt_slice_names))
-    print('💾 Saved slice embeddings + names.')
+    print(' Saved slice embeddings + names.')
     src_ids, src_vecs = aggregate_to_subject(src_slice_emb, src_slice_names)
     tgt_ids, tgt_vecs = aggregate_to_subject(tgt_slice_emb, tgt_slice_names)
     np.save(os.path.join(output_root, 'src_subject_vecs.npy'), src_vecs)
     np.save(os.path.join(output_root, 'tgt_subject_vecs.npy'), tgt_vecs)
     with open(os.path.join(output_root, 'src_subject_ids.txt'), 'w') as f:
         f.write('\n'.join(src_ids))
-    print('📈 Computing RDS scores...')
+    print(' Computing RDS scores...')
     scores = compute_rds_scores(src_vecs, tgt_vecs)
     np.save(os.path.join(output_root, 'rds_scores.npy'), scores)
     sorted_idx = np.argsort(scores)[::-1]
@@ -81,7 +81,7 @@ def main():
         f.write('\n'.join(sorted_ids))
     score_dict = {src_ids[i]: float(scores[i]) for i in range(len(src_ids))}
     np.save(os.path.join(output_root, 'rds_score_dict.npy'), score_dict, allow_pickle=True)
-    print('💾 Saved full ranking + score dict.')
+    print(' Saved full ranking + score dict.')
     budgets = [1, 5, 10, 15]
     for k in budgets:
         n = min(k * args.T, len(sorted_ids))
@@ -90,7 +90,7 @@ def main():
         os.makedirs(out_dir, exist_ok=True)
         with open(os.path.join(out_dir, 'train_subjects.txt'), 'w') as f:
             f.write('\n'.join(selected))
-        print(f'✅ Saved rds_{k}T ({n} subjects)')
-    print('\n🎉 RDS generation complete.')
+        print(f'OK Saved rds_{k}T ({n} subjects)')
+    print('\n RDS generation complete.')
 if __name__ == '__main__':
     main()

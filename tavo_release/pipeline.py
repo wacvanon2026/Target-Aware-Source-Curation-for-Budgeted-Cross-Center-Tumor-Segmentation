@@ -2,10 +2,8 @@ from __future__ import annotations
 import shlex
 from pathlib import Path
 from .common import write_json
-from .matrix import BUDGETS, DATASET_METHODS, SCORE_METHODS_8D, dataset_methods, method_matrix
-from .mamamia import BUDGETS as MAMAMIA_BUDGETS
+from .matrix import DATASET_METHODS, dataset_budgets, dataset_methods, dataset_score_methods, method_matrix
 from .mamamia import DOMAINS as MAMAMIA_DOMAINS
-from .mamamia import METHODS as MAMAMIA_METHODS
 from .officehome import DOMAINS as OFFICEHOME_DOMAINS
 from .selection_routes import domain_adaptation_route, selection_route, tavo_route
 
@@ -14,17 +12,17 @@ def shell_join(cmd: list[str]) -> str:
 
 def score_args(dataset: str, target: str) -> list[str]:
     args = []
-    for method in SCORE_METHODS_8D:
+    for method in dataset_score_methods(dataset):
         args.extend(['--score', f'{method}=scores/{dataset}/{target}/{method}.json'])
     return args
 
-def one_hot_weight(method: str) -> list[str]:
-    return ['1' if name == method else '0' for name in SCORE_METHODS_8D]
+def one_hot_weight(dataset: str, method: str) -> list[str]:
+    return ['1' if name == method else '0' for name in dataset_score_methods(dataset)]
 
 def mamamia_da_dataset_id(target: str, method: str, budget: int) -> str:
     target_offset = list(MAMAMIA_DOMAINS).index(target) * 100
     method_offset = list(dataset_methods('mamamia', 'domain_adaptation')).index(method) * 10
-    budget_offset = list(MAMAMIA_BUDGETS).index(budget)
+    budget_offset = list(dataset_budgets('mamamia')).index(budget)
     return str(9000 + target_offset + method_offset + budget_offset)
 
 def mamamia_plan(data_root: str='data/mamamia', split_root: str='splits/mamamia_lodo_seed42', results_root: str='outputs/nnunet_results') -> list[dict]:
@@ -33,15 +31,16 @@ def mamamia_plan(data_root: str='data/mamamia', split_root: str='splits/mamamia_
     for target in MAMAMIA_DOMAINS:
         for experiment in ('target_only', 'source_only', 'target_full_source'):
             steps.append({'name': f'mamamia_{target}_{experiment}', 'cmd': ['python', '-m', 'tavo_release.cli', 'command', '--dataset', 'mamamia', '--dataset-id', f'{target}:{experiment}']})
-        for budget in MAMAMIA_BUDGETS:
+        for budget in dataset_budgets('mamamia'):
             for method in dataset_methods('mamamia', 'selection'):
                 if method == 'random':
                     continue
                 out = f'{split_root}/{target}/methods/{method}_{budget}.txt'
-                steps.append({'name': f'mamamia_{target}_{method}{budget}_selection', 'cmd': ['python', '-m', 'tavo_release.cli', 'select', *score_args('mamamia', target), '--weight', *one_hot_weight(method), '--budget', str(budget), '--output', out]})
+                steps.append({'name': f'mamamia_{target}_{method}{budget}_selection', 'cmd': ['python', '-m', 'tavo_release.cli', 'select', *score_args('mamamia', target), '--weight', *one_hot_weight('mamamia', method), '--budget', str(budget), '--output', out]})
             steps.append({'name': f'mamamia_{target}_tavo{budget}_search', 'cmd': ['python', '-m', 'tavo_release.cli', 'search', *score_args('mamamia', target), '--budget', str(budget), '--output-dir', f'outputs/mamamia/{target}/tavo{budget}']})
-            for method in ('random', *MAMAMIA_METHODS):
+            for method in dataset_methods('mamamia', 'selection'):
                 steps.append({'name': f'mamamia_{target}_{method}{budget}', 'cmd': ['python', '-m', 'tavo_release.cli', 'command', '--dataset', 'mamamia', '--dataset-id', f'{target}:{method}{budget}']})
+            steps.append({'name': f'mamamia_{target}_tavo{budget}', 'cmd': ['python', '-m', 'tavo_release.cli', 'command', '--dataset', 'mamamia', '--dataset-id', f'{target}:tavo{budget}']})
             for method in dataset_methods('mamamia', 'domain_adaptation'):
                 cfg = f'configs/generated/mamamia_{target}_{method}_{budget}.json'
                 steps.append({'name': f'mamamia_{target}_{method}{budget}_da_config', 'cmd': ['python', '-m', 'tavo_release.cli', 'da-config', '--dataset', 'mamamia', '--method', method, '--split-dir', f'{split_root}/{target}', '--output-dir', f'outputs/mamamia/{target}/{method}{budget}', '--budget', str(budget), '--output', cfg, '--target', target, '--nnunet-dataset-id', mamamia_da_dataset_id(target, method, budget)]})
@@ -52,12 +51,12 @@ def mamamia_plan(data_root: str='data/mamamia', split_root: str='splits/mamamia_
 def brats_plan(data_root: str='data/brats', split_root: str='splits/brats', target: str='target') -> list[dict]:
     steps = [{'name': 'brats_split', 'cmd': ['python', '-m', 'tavo_release.cli', 'split', '--dataset', 'brats', '--data-root', data_root, '--output-root', split_root, '--target', target]}]
     for actual_target in method_matrix()['brats']['targets']:
-        for budget in MAMAMIA_BUDGETS:
+        for budget in dataset_budgets('brats'):
             for method in dataset_methods('brats', 'selection'):
                 if method == 'random':
                     continue
                 out = f'{split_root}/{actual_target}/methods/{method}_{budget}.txt'
-                steps.append({'name': f'brats_{actual_target}_{method}{budget}_selection', 'cmd': ['python', '-m', 'tavo_release.cli', 'select', *score_args('brats', actual_target), '--weight', *one_hot_weight(method), '--budget', str(budget), '--output', out]})
+                steps.append({'name': f'brats_{actual_target}_{method}{budget}_selection', 'cmd': ['python', '-m', 'tavo_release.cli', 'select', *score_args('brats', actual_target), '--weight', *one_hot_weight('brats', method), '--budget', str(budget), '--output', out]})
             steps.append({'name': f'brats_{actual_target}_tavo{budget}_search', 'cmd': ['python', '-m', 'tavo_release.cli', 'search', *score_args('brats', actual_target), '--budget', str(budget), '--output-dir', f'outputs/brats/{actual_target}/tavo{budget}']})
             for method in dataset_methods('brats', 'domain_adaptation'):
                 cfg = f'configs/generated/brats_{actual_target}_{method}_{budget}.json'
@@ -73,12 +72,12 @@ def officehome_plan(data_root: str='data/officehome', split_root: str='splits/of
         steps.append({'name': f'officehome_{target}_split', 'cmd': ['python', '-m', 'tavo_release.cli', 'split', '--dataset', 'officehome', '--data-root', data_root, '--output-root', split_root, '--target', target]})
         steps.append({'name': f'officehome_{target}_config', 'cmd': ['python', '-m', 'tavo_release.cli', 'officehome-config', '--split-dir', f'{split_root}/{target}', '--output-dir', f'outputs/officehome/{target}', '--output', f'configs/officehome_{target}.json']})
         steps.append({'name': f'officehome_{target}_train_command', 'cmd': ['python', '-m', 'tavo_release.cli', 'command', '--dataset', 'officehome', '--config', f'configs/officehome_{target}.json']})
-        for budget in MAMAMIA_BUDGETS:
+        for budget in dataset_budgets('officehome'):
             for method in dataset_methods('officehome', 'selection'):
                 if method == 'random':
                     continue
-                if method in SCORE_METHODS_8D:
-                    steps.append({'name': f'officehome_{target}_{method}{budget}_selection', 'cmd': ['python', '-m', 'tavo_release.cli', 'select', *score_args('officehome', target), '--weight', *one_hot_weight(method), '--budget', str(budget), '--output', f'{split_root}/{target}/methods/{method}_{budget}.txt']})
+                if method in dataset_score_methods('officehome'):
+                    steps.append({'name': f'officehome_{target}_{method}{budget}_selection', 'cmd': ['python', '-m', 'tavo_release.cli', 'select', *score_args('officehome', target), '--weight', *one_hot_weight('officehome', method), '--budget', str(budget), '--output', f'{split_root}/{target}/methods/{method}_{budget}.txt']})
                 else:
                     steps.append({'name': f'officehome_{target}_{method}{budget}_selection_route', 'cmd': ['python', '-m', 'tavo_release.cli', 'selection-route', '--dataset', 'officehome', '--target', target, '--method', method, '--budget', str(budget)]})
             steps.append({'name': f'officehome_{target}_tavo{budget}_search', 'cmd': ['python', '-m', 'tavo_release.cli', 'search', *score_args('officehome', target), '--budget', str(budget), '--output-dir', f'outputs/officehome/{target}/tavo{budget}']})
@@ -93,10 +92,10 @@ def combined_plan() -> list[dict]:
     return mamamia_plan() + brats_plan() + officehome_plan()
 
 def expected_plan_counts() -> dict[str, int]:
-    selection = sum((len(spec['targets']) * len(BUDGETS) * len(SCORE_METHODS_8D) for spec in DATASET_METHODS.values()))
-    external_selection = sum((len(spec['targets']) * len(BUDGETS) * len([method for method in spec['selection'] if method not in SCORE_METHODS_8D and method != 'random']) for spec in DATASET_METHODS.values()))
-    tavo = sum((len(spec['targets']) * len(BUDGETS) for spec in DATASET_METHODS.values()))
-    da = sum((len(spec['targets']) * len(BUDGETS) * len(spec['domain_adaptation']) for spec in DATASET_METHODS.values()))
+    selection = sum((len(spec['targets']) * len(spec['budgets']) * len(spec.get('score_methods', ())) for spec in DATASET_METHODS.values()))
+    external_selection = 0
+    tavo = sum((len(spec['targets']) * len(spec['budgets']) for spec in DATASET_METHODS.values()))
+    da = sum((len(spec['targets']) * len(spec['budgets']) * len(spec['domain_adaptation']) for spec in DATASET_METHODS.values()))
     base = len(mamamia_plan()) + len(brats_plan()) + len(officehome_plan())
     return {'steps': base, 'score_selection': selection, 'external_selection_route': external_selection, 'tavo_search': tavo, 'domain_adaptation_config': da, 'domain_adaptation_command': da}
 
@@ -112,11 +111,11 @@ def plan_route_errors(steps: list[dict]) -> list[dict]:
     errors = []
     for dataset, spec in DATASET_METHODS.items():
         for target in spec['targets']:
-            for budget in BUDGETS:
+            for budget in dataset_budgets(dataset):
                 for method in spec['selection']:
                     if method == 'random':
                         continue
-                    if method in SCORE_METHODS_8D:
+                    if method in dataset_score_methods(dataset):
                         name = f'{dataset}_{target}_{method}{budget}_selection'
                         expected = selection_route(dataset, target, method, budget)['command']
                     else:
@@ -145,7 +144,7 @@ def audit_plan() -> dict:
     for key, value in expected.items():
         if observed.get(key) != value:
             errors.append({'field': key, 'expected': value, 'observed': observed.get(key)})
-    required_names = {'mamamia_NACT_rds50_selection', 'mamamia_NACT_tavo50_search', 'mamamia_NACT_tavo50', 'brats_C5_rds50_selection', 'brats_C5_tavo50_search', 'officehome_Art_kmeans50_selection', 'officehome_Art_tavo50_search'}
+    required_names = {'mamamia_NACT_rds50_selection', 'mamamia_NACT_tavo50_search', 'mamamia_NACT_tavo50', 'brats_C5_rds50_selection', 'brats_C5_tavo50_search', 'officehome_Art_kmeans1_selection', 'officehome_Art_tavo1_search'}
     names = {step['name'] for step in steps}
     missing_names = sorted(required_names - names)
     if missing_names:

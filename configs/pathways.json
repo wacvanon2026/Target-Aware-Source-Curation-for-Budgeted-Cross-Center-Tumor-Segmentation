@@ -5,10 +5,39 @@
       "task": "tumor_segmentation",
       "backend": "nnUNet",
       "config": "configs/mamamia_nnunet.json",
-      "targets": ["NACT", "ISPY1", "DUKE", "ISPY2"],
-      "budgets": [50, 150, 250],
-      "selection_methods": ["random", "rds", "less", "orient", "craig", "gradmatch", "kmeans", "kcenter", "diversity"],
-      "score_file_methods": ["rds", "less", "orient", "craig", "gradmatch", "kmeans", "kcenter", "diversity"],
+      "targets": [
+        "NACT",
+        "ISPY1",
+        "DUKE",
+        "ISPY2"
+      ],
+      "budgets": [
+        50,
+        150,
+        250,
+        500
+      ],
+      "selection_methods": [
+        "random",
+        "rds",
+        "less",
+        "orient",
+        "craig",
+        "gradmatch",
+        "kmeans",
+        "kcenter",
+        "diversity"
+      ],
+      "score_file_methods": [
+        "rds",
+        "less",
+        "orient",
+        "craig",
+        "gradmatch",
+        "kmeans",
+        "kcenter",
+        "diversity"
+      ],
       "selection_entrypoints": {
         "rds": "tavo_release.tavo",
         "less": "tavo_release.tavo",
@@ -19,14 +48,30 @@
         "kcenter": "tavo_release.tavo",
         "diversity": "tavo_release.tavo"
       },
-      "tavo_methods": ["tavo_8d_cmaes"],
-      "tavo_entrypoints": ["python -m tavo_release.cli tavo-command --dataset mamamia"],
-      "domain_adaptation_methods": ["dann", "mmd", "advent", "seasa"],
+      "tavo_methods": [
+        "tavo_8d_cmaes"
+      ],
+      "tavo_entrypoints": [
+        "python -m tavo_release.cli tavo-command --dataset mamamia",
+        "external/nnunet/mamamia_nnunet/run_tavo_8d_cmaes.py"
+      ],
+      "domain_adaptation_methods": [
+        "dann",
+        "mmd",
+        "advent",
+        "seasa"
+      ],
       "domain_adaptation_trainers": {
         "dann": "nnUNetTrainerTAVODANN",
         "mmd": "nnUNetTrainerTAVOMMD",
         "advent": "nnUNetTrainerTAVOADVENT",
         "seasa": "nnUNetTrainerTAVOSEASA"
+      },
+      "domain_adaptation_entrypoints": {
+        "dann": "external/nnunet/mamamia_nnunet/submit_domain_alignment.py",
+        "mmd": "external/nnunet/mamamia_nnunet/submit_domain_alignment.py",
+        "advent": "external/nnunet/mamamia_nnunet/submit_domain_alignment.py",
+        "seasa": "external/nnunet/mamamia_nnunet/submit_domain_alignment.py"
       },
       "commands": {
         "split": "python -m tavo_release.cli split --dataset mamamia --data-root data/mamamia --output-root splits/mamamia_lodo_seed42",
@@ -36,14 +81,45 @@
     },
     {
       "dataset": "BraTS",
-      "aliases": ["bratz"],
+      "aliases": [
+        "bratz"
+      ],
       "task": "tumor_segmentation",
       "backend": "EfficientViT",
       "config": "configs/brats_efficientvit.yaml",
-      "targets": ["C5", "TCGA_LGG", "TCGA_GBM", "UPENN", "IVYGAP"],
-      "budgets": [50, 150, 250],
-      "selection_methods": ["random", "rds", "less", "orient", "craig", "gradmatch", "kmeans", "kcenter", "diversity"],
-      "score_file_methods": ["rds", "less", "orient", "craig", "gradmatch", "kmeans", "kcenter", "diversity"],
+      "targets": [
+        "C4",
+        "C5",
+        "TCGA_LGG",
+        "TCGA_GBM"
+      ],
+      "budgets": [
+        50,
+        150,
+        250,
+        500
+      ],
+      "selection_methods": [
+        "random",
+        "rds",
+        "less",
+        "orient",
+        "craig",
+        "gradmatch",
+        "kmeans",
+        "kcenter",
+        "diversity"
+      ],
+      "score_file_methods": [
+        "rds",
+        "less",
+        "orient",
+        "craig",
+        "gradmatch",
+        "kmeans",
+        "kcenter",
+        "diversity"
+      ],
       "selection_entrypoints": {
         "rds": "external/efficientvit/scripts/run_rds.py",
         "less": "external/efficientvit/scripts/run_less.py",
@@ -54,14 +130,34 @@
         "kcenter": "external/efficientvit/scripts/run_kcenter.py",
         "diversity": "external/efficientvit/scripts/run_diversity.py"
       },
-      "tavo_methods": ["tavo_8d_cmaes"],
-      "tavo_entrypoints": ["python -m tavo_release.cli tavo-command --dataset brats", "external/efficientvit/scripts/search_brats_tavo_8d.py"],
-      "domain_adaptation_methods": ["dann", "mmd", "advent", "seasa"],
+      "tavo_methods": [
+        "tavo_8d_cmaes"
+      ],
+      "tavo_entrypoints": [
+        "python -m tavo_release.cli tavo-command --dataset brats",
+        "external/efficientvit/scripts/search_brats_tavo_8d.py",
+        "external/efficientvit/scripts/search_C4_multi/cma_C4_8d_5T.py",
+        "external/efficientvit/scripts/search_C4_multi/cma_C4_8d_10T.py",
+        "external/efficientvit/scripts/search_multi/cma_C5_8d_5T.py",
+        "external/efficientvit/scripts/search_multi/cma_C5_8d_10T.py"
+      ],
+      "domain_adaptation_methods": [
+        "dann",
+        "mmd",
+        "advent",
+        "seasa"
+      ],
       "domain_adaptation_entrypoints": {
         "dann": "external/efficientvit/scripts/train_seg_da.py",
         "mmd": "external/efficientvit/scripts/train_seg_da.py",
         "advent": "external/efficientvit/scripts/train_seg_da.py",
         "seasa": "external/efficientvit/scripts/train_seg_da.py"
+      },
+      "domain_adaptation_config_methods": {
+        "dann": "dann",
+        "mmd": "dan_mmd",
+        "advent": "advent_advent",
+        "seasa": "se_asa"
       },
       "commands": {
         "split": "python -m tavo_release.cli split --dataset brats --data-root data/brats --output-root splits/brats --target C5",
@@ -74,23 +170,77 @@
       "task": "image_classification",
       "backend": "classification",
       "config": "configs/officehome_resnet.json",
-      "targets": ["Art", "Clipart", "Product", "RealWorld"],
-      "budgets": [50, 150, 250],
-      "selection_methods": ["random", "rds", "less", "orient", "craig", "gradmatch", "kmeans", "kcenter", "diversity"],
-      "score_file_methods": ["rds", "less", "orient", "craig", "gradmatch", "kmeans", "kcenter", "diversity"],
+      "targets": [
+        "Art",
+        "Clipart",
+        "Product",
+        "RealWorld"
+      ],
+      "budgets": [
+        1,
+        3,
+        5,
+        8,
+        15,
+        25,
+        40
+      ],
+      "selection_methods": [
+        "random",
+        "kmeans",
+        "kcenter",
+        "facilitylocation",
+        "craig",
+        "targetmmd",
+        "targetgradmatch",
+        "glister",
+        "orient"
+      ],
+      "score_file_methods": [
+        "kmeans",
+        "kcenter",
+        "facilitylocation",
+        "craig",
+        "targetmmd",
+        "targetgradmatch",
+        "glister",
+        "orient"
+      ],
       "selection_entrypoints": {
-        "orient": "external/efficientvit/scripts_cls/gen_source_orient_subset.py",
-        "craig": "external/efficientvit/scripts_cls/select_target_2shot.py",
-        "kmeans": "external/efficientvit/scripts_cls/select_target_2shot.py"
+        "kmeans": "external/efficientvit/scripts_cls_revise/select_source_officehome.py",
+        "kcenter": "external/efficientvit/scripts_cls_revise/select_source_officehome.py",
+        "facilitylocation": "external/efficientvit/scripts_cls_revise/select_source_officehome.py",
+        "craig": "external/efficientvit/scripts_cls_revise/select_source_officehome.py",
+        "targetmmd": "external/efficientvit/scripts_cls_revise/select_source_officehome.py",
+        "targetgradmatch": "external/efficientvit/scripts_cls_revise/select_source_officehome.py",
+        "glister": "external/efficientvit/scripts_cls_revise/select_source_officehome.py",
+        "orient": "external/efficientvit/scripts_cls_revise/select_source_officehome.py"
       },
-      "tavo_methods": ["tavo_8d_cmaes"],
-      "tavo_entrypoints": ["python -m tavo_release.cli tavo-command --dataset officehome", "external/efficientvit/scripts_cls/search_officehome_tavo_8d.py"],
-      "domain_adaptation_methods": ["dann", "mmd", "coral", "cdan"],
+      "tavo_methods": [
+        "tavo_8d_cmaes"
+      ],
+      "tavo_entrypoints": [
+        "python -m tavo_release.cli tavo-command --dataset officehome",
+        "external/efficientvit/scripts_cls/search_officehome_tavo_8d.py",
+        "external/efficientvit/scripts_cls_revise/search_officehome_tavo_8d.py"
+      ],
+      "domain_adaptation_methods": [
+        "dann",
+        "mmd",
+        "coral",
+        "cdan"
+      ],
       "domain_adaptation_entrypoints": {
         "dann": "external/efficientvit/scripts_cls/train_cls_da.py",
         "mmd": "external/efficientvit/scripts_cls/train_cls_da.py",
         "coral": "external/efficientvit/scripts_cls/train_cls_da.py",
         "cdan": "external/efficientvit/scripts_cls/train_cls_da.py"
+      },
+      "domain_adaptation_config_methods": {
+        "dann": "dann",
+        "mmd": "mmd",
+        "coral": "coral",
+        "cdan": "cdan"
       },
       "commands": {
         "split": "python -m tavo_release.cli split --dataset officehome --data-root data/officehome --output-root splits/officehome --target Art",

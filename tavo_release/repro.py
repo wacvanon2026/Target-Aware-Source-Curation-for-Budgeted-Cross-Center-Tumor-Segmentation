@@ -44,7 +44,7 @@ def make_mamamia(root: Path) -> None:
             (seg / f'{case}.nii.gz').write_text('synthetic')
 
 def make_brats(root: Path) -> None:
-    for domain in ('C5', 'TCGA_LGG', 'TCGA_GBM', 'UPENN', 'IVYGAP'):
+    for domain in ('C4', 'C5', 'TCGA_LGG', 'TCGA_GBM'):
         for idx in range(4):
             (root / f'subject_{domain}_{idx:03d}').mkdir(parents=True, exist_ok=True)
 
@@ -53,7 +53,7 @@ def make_officehome(root: Path) -> None:
         for label in ('a', 'b'):
             out = root / domain / label
             out.mkdir(parents=True, exist_ok=True)
-            for idx in range(10):
+            for idx in range(45):
                 Image.new('RGB', (8, 8), (idx * 12, 40, 90)).save(out / f'{idx}.png')
 
 def make_scores(root: Path, case_ids: list[str]) -> list[str]:

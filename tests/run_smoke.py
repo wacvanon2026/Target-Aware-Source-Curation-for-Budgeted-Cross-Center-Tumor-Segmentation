@@ -22,19 +22,19 @@ with TemporaryDirectory(prefix='tavo_release_test_') as tmp:
     release = release_audit('.')
     if any(release.values()):
         raise SystemExit(release)
-    for dataset, target in (('mamamia', 'NACT'), ('brats', 'C5'), ('officehome', 'Art')):
-        if search_command(dataset, target, 50).count('--score') != 8:
+    for dataset, target, budget in (('mamamia', 'NACT', 50), ('brats', 'C5', 50), ('officehome', 'Art', 1)):
+        if search_command(dataset, target, budget).count('--score') != 8:
             raise SystemExit(f'{dataset} TAVO route is not 8D')
-    kmeans = selection_route('officehome', 'Art', 'kmeans', 50)
+    kmeans = selection_route('officehome', 'Art', 'kmeans', 1)
     if kmeans['route_type'] != 'score_file':
         raise SystemExit('OfficeHome kmeans score route is missing')
     inventory = route_inventory('all')
-    if len(inventory) != 351:
+    if len(inventory) != 540:
         raise SystemExit('selection route inventory count changed')
     routed = route_audit()
     if not routed['ok']:
         raise SystemExit(routed)
-    expected_counts = {'selection': 351, 'tavo': 39, 'domain_adaptation': 156}
+    expected_counts = {'selection': 540, 'tavo': 60, 'domain_adaptation': 240}
     for family, expected in expected_counts.items():
         if routed['families'][family]['count'] != expected:
             raise SystemExit(routed)

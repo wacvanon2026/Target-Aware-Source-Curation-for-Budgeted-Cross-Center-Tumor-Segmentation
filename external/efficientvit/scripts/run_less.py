@@ -78,7 +78,7 @@ def main():
     parser.add_argument('--T', type=int, required=True)
     parser.add_argument('--beta', type=float, default=20.0)
     args = parser.parse_args()
-    base_dir = './data'
+    base_dir = 'external/efficientvit/data'
     src_split_dir = os.path.join(base_dir, f'splits_{args.target}_source')
     if args.target == 'UPENN':
         tgt_split_dir = os.path.join(base_dir, 'split_UPENN_T150')
@@ -108,9 +108,9 @@ def main():
     src_loader = DataLoader(src_dataset, batch_size=1, shuffle=False, num_workers=4)
     tgt_train_loader = DataLoader(tgt_train_dataset, batch_size=1, shuffle=False, num_workers=4)
     tgt_val_loader = DataLoader(tgt_val_dataset, batch_size=1, shuffle=False, num_workers=4)
-    print('🚀 Extracting SOURCE gradients...')
+    print(' Extracting SOURCE gradients...')
     src_grads, src_names = compute_gradient_features(model, src_loader, device, theta_params)
-    print('🎯 Extracting TARGET gradients...')
+    print(' Extracting TARGET gradients...')
     tgt_train_grads, tgt_train_names = compute_gradient_features(model, tgt_train_loader, device, theta_params)
     tgt_val_grads, tgt_val_names = compute_gradient_features(model, tgt_val_loader, device, theta_params)
     tgt_grads = np.concatenate([tgt_train_grads, tgt_val_grads], axis=0)
@@ -119,7 +119,7 @@ def main():
     print(f'TGT slice count: {len(tgt_names)}')
     np.save(os.path.join(out_root, 'src_slice_grads.npy'), src_grads)
     np.save(os.path.join(out_root, 'tgt_slice_grads.npy'), tgt_grads)
-    print('📈 Computing LESS scores...')
+    print(' Computing LESS scores...')
     slice_scores = compute_less_slice_scores(src_grads, tgt_grads, beta=args.beta)
     pid_to_scores = defaultdict(list)
     for name, s in zip(src_names, slice_scores):
@@ -140,7 +140,7 @@ def main():
         os.makedirs(out_dir, exist_ok=True)
         with open(os.path.join(out_dir, 'train_subjects.txt'), 'w') as f:
             f.write('\n'.join(selected))
-        print(f'✅ Saved LESS {k}T ({n} subjects)')
-    print('\n🎉 LESS pipeline completed successfully.')
+        print(f'OK Saved LESS {k}T ({n} subjects)')
+    print('\n LESS pipeline completed successfully.')
 if __name__ == '__main__':
     main()

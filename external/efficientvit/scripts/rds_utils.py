@@ -49,7 +49,7 @@ def compute_rds_scores(src_subj_vecs, tgt_subj_vecs, batch=1024):
     scores = np.zeros(N, dtype=np.float32)
     src_norm = src_subj_vecs / (np.linalg.norm(src_subj_vecs, axis=1, keepdims=True) + 1e-08)
     tgt_norm = tgt_subj_vecs / (np.linalg.norm(tgt_subj_vecs, axis=1, keepdims=True) + 1e-08)
-    print('🔍 Computing subject-level RDS+ scores…')
+    print(' Computing subject-level RDS+ scores...')
     for start in tqdm(range(0, N, batch)):
         end = min(start + batch, N)
         S = src_norm[start:end]

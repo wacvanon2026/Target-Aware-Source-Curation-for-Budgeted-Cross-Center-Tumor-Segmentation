@@ -2,7 +2,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from .domain_adaptation import BRATS_ENTRYPOINTS, MAMAMIA_TRAINERS, OFFICEHOME_ENTRYPOINTS
-from .matrix import BUDGETS, DATASET_METHODS, SCORE_METHODS_8D
+from .matrix import DATASET_METHODS
 REQUIRED_DATASETS = {'MAMA-MIA': 'mamamia', 'BraTS': 'brats', 'OfficeHome': 'officehome'}
 
 def load_pathways(path: str | Path) -> list[dict]:
@@ -23,21 +23,18 @@ def domain_adaptation_route_present(spec: dict, method: str) -> bool:
             return True
     return False
 
-def tavo_route_present(spec: dict) -> bool:
-    if not spec.get('tavo_methods'):
-        return False
-    if not spec.get('tavo_entrypoints'):
-        return False
+def tavo_route_present(spec: dict, expected: dict | None=None) -> bool:
     score_methods = set(spec.get('score_file_methods', []))
-    return set(SCORE_METHODS_8D).issubset(score_methods)
+    required = set((expected or {}).get('score_methods', ()))
+    return required.issubset(score_methods)
 
 def expected_da_manifest(dataset_key: str) -> tuple[str, dict[str, str]]:
     if dataset_key == 'mamamia':
-        return ('domain_adaptation_trainers', MAMAMIA_TRAINERS)
+        return ('domain_adaptation_trainers', {'dann': 'nnUNetTrainerTAVODANN', 'mmd': 'nnUNetTrainerTAVOMMD', 'advent': 'nnUNetTrainerTAVOADVENT', 'seasa': 'nnUNetTrainerTAVOSEASA'})
     if dataset_key == 'brats':
-        return ('domain_adaptation_entrypoints', BRATS_ENTRYPOINTS)
+        return ('domain_adaptation_config_methods', {'dann': 'dann', 'mmd': 'dan_mmd', 'advent': 'advent_advent', 'seasa': 'se_asa'})
     if dataset_key == 'officehome':
-        return ('domain_adaptation_entrypoints', OFFICEHOME_ENTRYPOINTS)
+        return ('domain_adaptation_config_methods', {'dann': 'dann', 'mmd': 'mmd', 'coral': 'coral', 'cdan': 'cdan'})
     raise ValueError(dataset_key)
 
 def compare_sequence(public_name: str, field: str, actual: list | tuple, expected: tuple) -> list[str]:
@@ -77,7 +74,7 @@ def audit_pathways(path: str | Path='configs/pathways.json') -> dict:
         config = spec.get('config')
         if not config or not (root / config).exists():
             errors.append(f'{public_name} config missing: {config}')
-        if tuple(spec.get('budgets', [])) != BUDGETS:
+        if tuple(spec.get('budgets', [])) != expected['budgets']:
             errors.append(f'{public_name} budgets mismatch')
         errors.extend(compare_sequence(public_name, 'targets', spec.get('targets', []), expected['targets']))
         for field, family in (('selection_methods', 'selection'), ('tavo_methods', 'tavo'), ('domain_adaptation_methods', 'domain_adaptation')):
@@ -85,7 +82,7 @@ def audit_pathways(path: str | Path='configs/pathways.json') -> dict:
             errors.extend(compare_sequence(public_name, field, values, expected[family]))
             if not values:
                 errors.append(f'{public_name} has empty {field}')
-        if tuple(spec.get('score_file_methods', [])) != SCORE_METHODS_8D:
+        if tuple(spec.get('score_file_methods', [])) != expected.get('score_methods', ()):
             errors.append(f'{public_name} score_file_methods mismatch')
         allowed_selection_routes = tuple((method for method in expected['selection'] if method != 'random'))
         errors.extend(compare_route_keys(public_name, 'selection_entrypoints', spec.get('selection_entrypoints', {}), allowed_selection_routes))
@@ -93,7 +90,7 @@ def audit_pathways(path: str | Path='configs/pathways.json') -> dict:
         for method in spec.get('selection_methods', []):
             if not selection_route_present(spec, method):
                 errors.append(f'{public_name} selection route missing: {method}')
-        missing_score_selections = [method for method in SCORE_METHODS_8D if method not in spec.get('selection_methods', [])]
+        missing_score_selections = [method for method in expected.get('score_methods', ()) if method not in spec.get('selection_methods', [])]
         if missing_score_selections:
             errors.append(f'{public_name} missing 8D selection methods: {missing_score_selections}')
         for method in spec.get('domain_adaptation_methods', []):
@@ -102,6 +99,6 @@ def audit_pathways(path: str | Path='configs/pathways.json') -> dict:
         route_key, route_values = expected_da_manifest(dataset_key)
         if spec.get(route_key, {}) != route_values:
             errors.append(f'{public_name} {route_key} mismatch')
-        if not tavo_route_present(spec):
+        if not tavo_route_present(spec, expected):
             errors.append(f'{public_name} TAVO route missing')
     return {'ok': not errors, 'errors': errors, 'datasets': sorted(seen)}

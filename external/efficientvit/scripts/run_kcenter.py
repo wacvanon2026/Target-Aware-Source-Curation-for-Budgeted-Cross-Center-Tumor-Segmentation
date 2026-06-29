@@ -10,7 +10,7 @@ def kcenter_full_ranking(X, max_rank=750, normalize=True, seed=0, eps=1e-12):
     X = X.astype(np.float64)
     if normalize:
         X = X / (np.linalg.norm(X, axis=1, keepdims=True) + eps)
-    print(f'🔹 Running KCenter greedy (max_rank={K})...')
+    print(f' Running KCenter greedy (max_rank={K})...')
     selected = []
     gains = []
     first = np.random.randint(N)
@@ -36,10 +36,10 @@ def main():
     parser.add_argument('--normalize', action='store_true')
     parser.add_argument('--seed', type=int, default=0)
     args = parser.parse_args()
-    embed_root = f'././data/splits_{args.target}_rds'
-    out_root = f'././data/splits_{args.target}_kcenter'
+    embed_root = f'external/efficientvit/data/splits_{args.target}_rds'
+    out_root = f'external/efficientvit/data/splits_{args.target}_kcenter'
     os.makedirs(out_root, exist_ok=True)
-    print(f'\n📂 Loading embeddings from: {embed_root}')
+    print(f'\n Loading embeddings from: {embed_root}')
     src_vecs = np.load(os.path.join(embed_root, 'src_subject_vecs.npy'))
     with open(os.path.join(embed_root, 'src_subject_ids.txt')) as f:
         src_ids = [line.strip() for line in f]
@@ -51,11 +51,11 @@ def main():
     score_dict = {src_ids[i]: float(score[i]) for i in range(len(src_ids))}
     score_path = os.path.join(out_root, 'kcenter_score_dict.npy')
     np.save(score_path, score_dict, allow_pickle=True)
-    print(f'💾 Saved kcenter_score_dict.npy → {score_path}')
+    print(f' Saved kcenter_score_dict.npy -> {score_path}')
     ordered_ids = [src_ids[i] for i in selected_order]
     with open(os.path.join(out_root, 'kcenter_sorted_ids.txt'), 'w') as f:
         f.write('\n'.join(ordered_ids))
-    print('💾 Saved greedy order.')
+    print(' Saved greedy order.')
     budgets_T = [1, 5, 10, 15]
     for k in budgets_T:
         budget = k * args.T
@@ -64,7 +64,7 @@ def main():
         os.makedirs(subset_dir, exist_ok=True)
         with open(os.path.join(subset_dir, 'train_subjects.txt'), 'w') as f:
             f.write('\n'.join(subset_ids))
-        print(f'✅ Saved kcenter_{k}T ({budget})')
-    print('\n🎉 KCenter completed.')
+        print(f'OK Saved kcenter_{k}T ({budget})')
+    print('\n KCenter completed.')
 if __name__ == '__main__':
     main()

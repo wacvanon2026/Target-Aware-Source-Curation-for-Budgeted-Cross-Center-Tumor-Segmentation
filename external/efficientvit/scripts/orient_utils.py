@@ -54,7 +54,7 @@ def compute_gradient_features(model, loader, device, theta_params, save_prefix=N
         np.save(save_prefix + '_slice_grads.npy', grads)
         with open(save_prefix + '_slice_names.txt', 'w') as f:
             f.write('\n'.join(names))
-        print(f'💾 Saved slice gradients → {save_prefix}_slice_grads.npy')
+        print(f' Saved slice gradients -> {save_prefix}_slice_grads.npy')
     return (grads, names)
 
 def aggregate_to_subject_level(slice_grads, slice_names, save_prefix=None):
@@ -72,7 +72,7 @@ def aggregate_to_subject_level(slice_grads, slice_names, save_prefix=None):
         np.save(save_prefix + '_case_vecs.npy', subj_vecs)
         with open(save_prefix + '_case_ids.txt', 'w') as f:
             f.write('\n'.join(subj_ids))
-        print(f'💾 Saved case embeddings → {save_prefix}_case_vecs.npy')
+        print(f' Saved case embeddings -> {save_prefix}_case_vecs.npy')
     return (subj_ids, subj_vecs)
 
 def orient_select_subset(src_subj_vecs, tgt_subj_vecs, src_subj_ids, budget, eta=1.0):

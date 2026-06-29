@@ -16,7 +16,7 @@ def gradmatch_full_ranking(src_vecs, tgt_vecs, normalize=True, max_rank=750, eps
     gains = []
     residual = g_t.copy()
     prev_norm = np.dot(residual, residual)
-    print('🚀 Running GradMatch OMP (gain-based ranking)...')
+    print(' Running GradMatch OMP (gain-based ranking)...')
     for step in range(K):
         corr = G @ residual
         if selected:
@@ -36,7 +36,7 @@ def gradmatch_full_ranking(src_vecs, tgt_vecs, normalize=True, max_rank=750, eps
         gains.append(float(gain))
         prev_norm = new_norm
         if step % 100 == 0:
-            print(f'Step {step}/{K} | residual norm² = {new_norm:.6f}')
+            print(f'Step {step}/{K} | residual norm2 = {new_norm:.6f}')
     return (selected, gains)
 
 def main():
@@ -46,11 +46,11 @@ def main():
     parser.add_argument('--normalize', action='store_true')
     parser.add_argument('--max_rank', type=int, default=750)
     args = parser.parse_args()
-    base_root = '.'
+    base_root = 'external/efficientvit'
     embed_root = os.path.join(base_root, 'results', f'orient_embeddings_{args.target}')
     out_root = os.path.join(base_root, 'data', f'splits_{args.target}_gradmatch')
     os.makedirs(out_root, exist_ok=True)
-    print(f'\n📂 Loading embeddings from: {embed_root}')
+    print(f'\n Loading embeddings from: {embed_root}')
     src_vecs = np.load(os.path.join(embed_root, 'src_case_vecs.npy'))
     tgt_vecs = np.load(os.path.join(embed_root, 'tgt_case_vecs.npy'))
     with open(os.path.join(embed_root, 'src_case_ids.txt')) as f:
@@ -63,7 +63,7 @@ def main():
         score[idx] = float(gain)
     score_dict = {src_ids[i]: float(score[i]) for i in range(len(src_ids))}
     np.save(os.path.join(out_root, 'gradmatch_score_dict.npy'), score_dict, allow_pickle=True)
-    print('💾 Saved gradmatch_score_dict.npy')
+    print(' Saved gradmatch_score_dict.npy')
     budgets_T = [1, 5, 10, 15]
     for k in budgets_T:
         budget = k * args.T
@@ -72,7 +72,7 @@ def main():
         os.makedirs(subset_dir, exist_ok=True)
         with open(os.path.join(subset_dir, 'train_subjects.txt'), 'w') as f:
             f.write('\n'.join(subset_ids))
-        print(f'✅ Saved gradmatch_{k}T ({budget})')
-    print(f'\n🎉 {args.target} GradMatch complete!')
+        print(f'OK Saved gradmatch_{k}T ({budget})')
+    print(f'\n {args.target} GradMatch complete!')
 if __name__ == '__main__':
     main()

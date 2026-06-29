@@ -28,14 +28,14 @@ def save_checkpoint(state, save_dir, filename='latest.pt'):
     os.makedirs(save_dir, exist_ok=True)
     path = os.path.join(save_dir, filename)
     torch.save(state, path)
-    print(f'✅ Saved checkpoint: {path}')
+    print(f'OK Saved checkpoint: {path}')
 
 def train_one_epoch(model, loader, optimizer, criterion, device, scaler):
     model.train()
     total_loss = 0.0
     total_correct = 0
     total_samples = 0
-    for imgs, labels in tqdm(loader, desc='🧠 Training', ncols=100):
+    for imgs, labels in tqdm(loader, desc=' Training', ncols=100):
         imgs = imgs.to(device, non_blocking=True)
         labels = labels.to(device, non_blocking=True)
         optimizer.zero_grad(set_to_none=True)
@@ -54,7 +54,7 @@ def train_one_epoch(model, loader, optimizer, criterion, device, scaler):
     acc = total_correct / total_samples
     return (avg_loss, acc)
 
-def evaluate(model, loader, criterion, device, desc='🔍 Evaluating'):
+def evaluate(model, loader, criterion, device, desc=' Evaluating'):
     model.eval()
     total_loss = 0.0
     total_correct = 0
@@ -91,7 +91,7 @@ def load_datasets(cfg):
         source_train = OfficeDataset(source_train_txt, transform=train_transform, return_path=False)
         class_to_idx = source_train.class_to_idx
         train_datasets.append(source_train)
-        print(f'✅ Loaded source_train: {len(source_train)} samples')
+        print(f'OK Loaded source_train: {len(source_train)} samples')
         print('Example source samples:')
         for i in range(min(5, len(source_train.samples))):
             print('   ', source_train.samples[i])
@@ -102,7 +102,7 @@ def load_datasets(cfg):
         else:
             target_train = OfficeDataset(target_selected_txt, transform=train_transform, class_to_idx=class_to_idx, return_path=False)
         train_datasets.append(target_train)
-        print(f'✅ Loaded target_selected: {len(target_train)} samples')
+        print(f'OK Loaded target_selected: {len(target_train)} samples')
         print('Example target_selected samples:')
         for i in range(min(5, len(target_train.samples))):
             print('   ', target_train.samples[i])
@@ -119,14 +119,14 @@ def load_datasets(cfg):
     val_dataset = None
     if source_val_txt is not None:
         val_dataset = OfficeDataset(source_val_txt, transform=test_transform, class_to_idx=class_to_idx, return_path=False)
-        print(f'✅ Loaded source_val: {len(val_dataset)} samples')
+        print(f'OK Loaded source_val: {len(val_dataset)} samples')
         print('Example source_val samples:')
         for i in range(min(5, len(val_dataset.samples))):
             print('   ', val_dataset.samples[i])
     else:
-        print('ℹ️ No validation set provided.')
+        print(' No validation set provided.')
     test_dataset = OfficeDataset(target_test_txt, transform=test_transform, class_to_idx=class_to_idx, return_path=False)
-    print(f'✅ Loaded target_test: {len(test_dataset)} samples')
+    print(f'OK Loaded target_test: {len(test_dataset)} samples')
     print('Example target_test samples:')
     for i in range(min(5, len(test_dataset.samples))):
         print('   ', test_dataset.samples[i])
@@ -137,9 +137,9 @@ def main(config_path):
         cfg = yaml.safe_load(f)
     set_seed(cfg['training']['seed'])
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print('🚀 Device:', device)
+    print(' Device:', device)
     model = ResNet50Classifier(num_classes=cfg['model']['num_classes'], pretrained=cfg['model']['pretrained']).to(device)
-    print('📁 Loading datasets...')
+    print(' Loading datasets...')
     source_train_txt = cfg['data'].get('source_train', None)
     source_val_txt = cfg['data'].get('source_val', None)
     target_selected_txt = cfg['data'].get('target_selected', None)
@@ -165,14 +165,14 @@ def main(config_path):
     best_metric = -1
     use_val = val_loader is not None
     history = []
-    print('\n🔥 Starting training...')
+    print('\n Starting training...')
     for epoch in range(epochs):
-        print(f'\n🟢 Epoch {epoch + 1}/{epochs}')
+        print(f'\n Epoch {epoch + 1}/{epochs}')
         lr = optimizer.param_groups[0]['lr']
         print(f'LR: {lr:.6f}')
         train_loss, train_acc = train_one_epoch(model, train_loader, optimizer, criterion, device, scaler)
         if use_val:
-            val_loss, val_acc = evaluate(model, val_loader, criterion, device, '🔍 Validating')
+            val_loss, val_acc = evaluate(model, val_loader, criterion, device, ' Validating')
             metric_for_best = val_acc
             print(f'Train Loss {train_loss:.4f} | Train Acc {train_acc:.4f} | Val Loss {val_loss:.4f} | Val Acc {val_acc:.4f}')
         else:
@@ -186,7 +186,7 @@ def main(config_path):
             best_metric = metric_for_best
             save_checkpoint(checkpoint, save_dir, 'best.pt')
         history.append({'epoch': epoch + 1, 'val_acc': val_acc, 'val_loss': val_loss})
-    print('\n🏁 Training finished')
+    print('\n Training finished')
     last_epoch = history[-1]['epoch']
     shutil.copy(os.path.join(save_dir, f'epoch_{last_epoch:03d}.pt'), os.path.join(save_dir, 'last.pt'))
     K = 5
@@ -197,13 +197,13 @@ def main(config_path):
     else:
         last_best_epoch = last_epoch
     shutil.copy(os.path.join(save_dir, f'epoch_{last_best_epoch:03d}.pt'), os.path.join(save_dir, 'last_best.pt'))
-    print(f'⭐ Last-best epoch = {last_best_epoch}')
+    print(f'* Last-best epoch = {last_best_epoch}')
 
     def run_test(ckpt_name):
-        print(f'\n🔎 Evaluating {ckpt_name}')
+        print(f'\n Evaluating {ckpt_name}')
         ckpt = torch.load(os.path.join(save_dir, ckpt_name), map_location=device)
         model.load_state_dict(ckpt['model_state'])
-        loss, acc = evaluate(model, test_loader, criterion, device, '🧪 Testing')
+        loss, acc = evaluate(model, test_loader, criterion, device, ' Testing')
         print(f'{ckpt_name} Target Acc: {acc:.4f}')
         return acc
     best_acc = run_test('best.pt')

@@ -36,7 +36,7 @@ def seed_worker(worker_id):
 def train_one_epoch(model, loader, optimizer, criterion, device, scaler):
     model.train()
     total_loss = 0.0
-    for batch in tqdm(loader, desc='🧠 Training (AMP)', ncols=100):
+    for batch in tqdm(loader, desc=' Training (AMP)', ncols=100):
         imgs = batch[0].to(device)
         masks = batch[1].to(device)
         optimizer.zero_grad()
@@ -53,7 +53,7 @@ def evaluate(model, loader, criterion, device):
     model.eval()
     total_loss = 0.0
     with torch.no_grad():
-        for batch in tqdm(loader, desc='🔍 Evaluating', ncols=100):
+        for batch in tqdm(loader, desc=' Evaluating', ncols=100):
             imgs = batch[0].to(device)
             masks = batch[1].to(device)
             outputs = model(imgs)
@@ -69,12 +69,12 @@ def load_datasets(data_cfg):
         for dom in data_cfg['domains']:
             ds = BraTSSliceDataset(root_dir=dom['path'], split=dom['split'], img_size=data_cfg['img_size'], split_txt_dir=dom.get('split_txt'), skip_empty=skip_empty_train)
             train_datasets.append(ds)
-            print(f"✅ Loaded train domain: {dom['name']} ({len(ds)} slices)")
+            print(f"OK Loaded train domain: {dom['name']} ({len(ds)} slices)")
     else:
         ds = BraTSSliceDataset(root_dir=data_cfg['train_dir'], split='train', img_size=data_cfg['img_size'], split_txt_dir=data_cfg.get('split_txt_dir'), skip_empty=skip_empty_train)
         train_datasets.append(ds)
     train_dataset = ConcatDataset(train_datasets)
-    print(f'📊 Total train dataset: {len(train_dataset)} slices')
+    print(f' Total train dataset: {len(train_dataset)} slices')
     val_dataset = None
     if 'val' in data_cfg:
         val_cfg = data_cfg['val']
@@ -95,10 +95,10 @@ def main(config_path, seed=None):
         seed = int(seed)
         set_seed(seed)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(f'🚀 Using device: {device}')
+    print(f' Using device: {device}')
     model_cfg = cfg['model']
     model = EfficientViT_Seg(backbone=model_cfg['name'], in_channels=model_cfg['in_channels'], num_classes=model_cfg['num_classes'], pretrained=model_cfg.get('pretrained', True)).to(device)
-    print('📁 Loading datasets...')
+    print(' Loading datasets...')
     train_dataset, val_dataset, test_dataset = load_datasets(cfg['data'])
     for ds in train_dataset.datasets:
         ds.return_meta = False
@@ -119,15 +119,15 @@ def main(config_path, seed=None):
     metadata = {'config_path': os.path.abspath(cfg_path), 'save_dir': os.path.abspath(save_dir), 'seed': seed, 'created_at': datetime.now().isoformat(timespec='seconds'), 'epochs': train_cfg['epochs'], 'lr': cfg['optimizer']['lr'], 'weight_decay': cfg['optimizer']['weight_decay'], 'scheduler_T_max': cfg['scheduler']['T_max'], 'scheduler_eta_min': cfg['scheduler']['eta_min']}
     with open(os.path.join(save_dir, 'run_metadata.json'), 'w') as f:
         json.dump(metadata, f, indent=2)
-    print(f"\n🔥 Starting training for {train_cfg['epochs']} epochs...")
+    print(f"\n Starting training for {train_cfg['epochs']} epochs...")
     best_loss = float('inf')
     val_history = []
     for epoch in range(train_cfg['epochs']):
-        print(f"\n🟢 Epoch [{epoch + 1}/{train_cfg['epochs']}]")
+        print(f"\n Epoch [{epoch + 1}/{train_cfg['epochs']}]")
         train_loss = train_one_epoch(model, train_loader, optimizer, criterion, device, scaler)
         val_loss = evaluate(model, val_loader, criterion, device) if val_loader else 0
         val_history.append(val_loss)
-        print(f'📊 Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}')
+        print(f' Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}')
         scheduler.step()
         checkpoint = {'epoch': epoch + 1, 'model_state': model.state_dict(), 'optimizer_state': optimizer.state_dict(), 'val_loss': val_loss, 'config': cfg, 'seed': seed}
         save_checkpoint(checkpoint, save_dir, f'epoch_{epoch + 1:03d}.pt')
@@ -144,19 +144,19 @@ def main(config_path, seed=None):
         target_path = os.path.join(save_dir, 'best_last.pt')
         if os.path.exists(best_last_ckpt):
             torch.save(torch.load(best_last_ckpt), target_path)
-            print(f'✅ Saved best_last.pt (epoch {best_last_epoch})')
-    print(f'\n🏁 Training complete! Best Val Loss: {best_loss:.4f}')
-    print('\n🚀 Starting 3D case-level evaluation...')
+            print(f'OK Saved best_last.pt (epoch {best_last_epoch})')
+    print(f'\n Training complete! Best Val Loss: {best_loss:.4f}')
+    print('\n Starting 3D case-level evaluation...')
     from eval.evaluate_2d_to_3d import run_evaluation_2d_to_3d
     best_ckpt = os.path.join(save_dir, 'best.pt')
-    print('\n🔎 Evaluating BEST checkpoint...')
+    print('\n Evaluating BEST checkpoint...')
     run_evaluation_2d_to_3d(config_path=cfg_path, checkpoint_path=best_ckpt, output_dir=save_dir)
     last_ckpt = os.path.join(save_dir, 'last.pt')
-    print('\n🔎 Evaluating LAST checkpoint...')
+    print('\n Evaluating LAST checkpoint...')
     run_evaluation_2d_to_3d(config_path=cfg_path, checkpoint_path=last_ckpt, output_dir=save_dir)
     best_last_ckpt = os.path.join(save_dir, 'best_last.pt')
     if os.path.exists(best_last_ckpt):
-        print('\n🔎 Evaluating BEST_LAST checkpoint...')
+        print('\n Evaluating BEST_LAST checkpoint...')
         run_evaluation_2d_to_3d(config_path=cfg_path, checkpoint_path=best_last_ckpt, output_dir=save_dir)
 if __name__ == '__main__':
     import argparse
